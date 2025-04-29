@@ -21,5 +21,6 @@ manu_cosmetic_ingredient
 manu_cosmetic_sale
 manu_output
 manu_per
+
 You are allowed up to 5 query calls.
 """

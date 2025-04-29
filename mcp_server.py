@@ -38,7 +38,6 @@ def get_db_connection():
 async def execute_select_or_show(query: str):
     """Execute only SELECT or SHOW queries."""
     try:
-        # Validate the query
         logger.info(f"LLM is trying to execute: {query}")
 
         cleaned_query = query.strip().lower()
@@ -52,12 +51,101 @@ async def execute_select_or_show(query: str):
         columns = [desc[0] for desc in cursor.description] if cursor.description else []
         conn.close()
         
-        return {"result": json.dumps({"columns": columns, "rows": results})}
+        return json.dumps({"columns": columns,"rows": results},ensure_ascii=False)
     
     except Error as e:
         logger.error(f"Error executing query: {e}")
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
     
+
+@mcp.tool("Sales_Target_Success")
+async def sales_target(year: str, month: str=None):
+    """ 
+    Employee Sales Report
+    - If both year and month are entered => Sales report for that month only
+    - If only year is entered => Sales report for the whole year
+
+    Args:
+    year (str): Year (4 digits) e.g. "2024"
+    month (str, optional): Month (2 digits) e.g. "04" If not entered, the whole year
+
+    Returns:
+    list[dict] | dict: Sales data or error message
+"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        if month:
+            period = f"{year}-{month}-01"
+            query = f"""
+                SELECT 
+                    ns.personid,
+                    ne.fullname,
+                    ns.price,
+                    ns.planned_value,
+                    (ns.price - ns.planned_value) AS over_target
+                FROM 
+                    nation_saleperformance AS ns
+                JOIN 
+                    nation_employee AS ne
+                ON 
+                    ns.personid = ne.id
+                WHERE 
+                    ns.period = '{period}'
+                AND ns.price >= ns.planned_value;
+            """
+        else:  
+            query = f"""
+                SELECT 
+                    ne.id AS personid,
+                    ne.fullname,
+                    COALESCE(SUM(ns.price), 0) AS total_price,
+                    COALESCE(SUM(ns.planned_value), 0) AS total_planned_value,
+                    (COALESCE(SUM(ns.price), 0) - COALESCE(SUM(ns.planned_value), 0)) AS over_target
+                FROM 
+                    nation_employee AS ne
+                LEFT JOIN 
+                    nation_saleperformance AS ns
+                ON 
+                    ns.personid = ne.id
+                AND YEAR(ns.period) = '{year}'
+                GROUP BY 
+                    ne.id, ne.fullname
+                HAVING 
+                    total_price > 0
+                ORDER BY 
+                    over_target DESC;
+            """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        output = []
+        for row in results:
+            if month:
+                output.append({
+                    "personid": row[0],
+                    "fullname": row[1],
+                    "price": int(row[2]),
+                    "planned_value": int(row[3]),
+                    "over_target": int(row[4])
+                })
+            else:
+                output.append({
+                    "personid": row[0],
+                    "fullname": row[1],
+                    "total_price": int(row[2]),
+                    "total_planned_value": int(row[3]),
+                    "over_target": int(row[4])
+                })
+
+        return json.dumps(output,ensure_ascii=False)
+        
+    except Error as e:
+        logger.error(f"Error executing query: {e}")
+        return {"result": json.dumps({"error": str(e)}), "status": "error"}
 
 
 if __name__ == "__main__":

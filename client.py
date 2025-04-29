@@ -56,7 +56,8 @@ async def chat(chatmessage: RequestMessage):
                 }
             ) as client:    
                 agent = create_react_agent(llm, client.get_tools(),prompt=DATA_ANALYZE)
-                result = await agent.ainvoke({"messages": messages})        
+                result = await agent.ainvoke({"messages": messages})   
+                print(result)     
                 final_result = result["messages"][-1].content
                 
                 return{
