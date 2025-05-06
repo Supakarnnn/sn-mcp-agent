@@ -1,155 +1,181 @@
-import os
-from fastmcp import FastMCP
-from dotenv import load_dotenv
-import logging
-import asyncio
-import json
-from mcp.types import Resource, Tool, TextContent
-from mysql.connector import connect, Error
+# import os
+# from fastmcp import FastMCP
+# from dotenv import load_dotenv
+# import logging
+# import asyncio
+# import json
+# from mcp.types import Resource, Tool, TextContent
+# from mysql.connector import connect, Error
 
-load_dotenv()
+# load_dotenv()
 
-mcp = FastMCP(name="MCP Server")
+# mcp = FastMCP(name="MCP Server")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger("MCP Server")
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#     handlers=[logging.StreamHandler()]
+# )
+# logger = logging.getLogger("MCP Server")
 
-DB_CONFIG = {
-    "host": os.environ.get("MYSQL_HOST"),
-    "user": os.environ.get("MYSQL_USER"),
-    "password": os.environ.get("MYSQL_PASSWORD"),
-    "database": os.environ.get("MYSQL_DATABASE"),
-    "port": 3306
-}
+# DB_CONFIG = {
+#     "host": os.environ.get("MYSQL_HOST"),
+#     "user": os.environ.get("MYSQL_USER"),
+#     "password": os.environ.get("MYSQL_PASSWORD"),
+#     "database": os.environ.get("MYSQL_DATABASE"),
+#     "port": 3306
+# }
 
-def get_db_connection():
-    try:
-        return connect(**DB_CONFIG)
-    except Error as e:
-        logger.error(f"{e}")
-        raise Exception(f"{str(e)}")
+# DB_CONFIG = {
+#     "host": os.environ.get("MYSQL_HOST_NW"),
+#     "user": os.environ.get("MYSQL_USER_NW"),
+#     "password": os.environ.get("MYSQL_PASSWORD_NW"),
+#     "database": os.environ.get("MYSQL_DATABASE_NW"),
+#     "port": 6033
+# }
+
+# def get_db_connection():
+#     try:
+#         return connect(**DB_CONFIG)
+#     except Error as e:
+#         logger.error(f"{e}")
+#         raise Exception(f"{str(e)}")
 
 
-@mcp.tool("execute_select_or_show")
-async def execute_select_or_show(query: str):
-    """Execute only SELECT or SHOW queries."""
-    try:
-        logger.info(f"LLM is trying to execute: {query}")
+# @mcp.tool("execute_select_or_show")
+# async def execute_select_or_show(query: str):
+#     """Execute only SELECT or SHOW queries."""
+#     try:
+#         logger.info(f"LLM is trying to execute: {query}")
 
-        cleaned_query = query.strip().lower()
-        if not (cleaned_query.startswith("select") or cleaned_query.startswith("show")):
-            return {"result": json.dumps({"error": "Only SELECT or SHOW queries are allowed."}), "status": "error"}
+#         cleaned_query = query.strip().lower()
+#         # cleaned_query = query
+#         if not (cleaned_query.startswith("select") or cleaned_query.startswith("show")):
+#             return {"result": json.dumps({"error": "Only SELECT or SHOW queries are allowed."}), "status": "error"}
         
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(query)
-        results = cursor.fetchall()
-        columns = [desc[0] for desc in cursor.description] if cursor.description else []
-        conn.close()
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#         cursor.execute(query)
+#         results = cursor.fetchall()
+#         print(results)
+#         columns = [desc[0] for desc in cursor.description] if cursor.description else []
+#         conn.close()
         
-        return json.dumps({"columns": columns,"rows": results},ensure_ascii=False)
+#         return json.dumps({"columns": columns,"rows": results},ensure_ascii=False)
     
-    except Error as e:
-        logger.error(f"Error executing query: {e}")
-        return {"result": json.dumps({"error": str(e)}), "status": "error"}
+#     except Error as e:
+#         logger.error(f"Error executing query: {e}")
+#         return {"result": json.dumps({"error": str(e)}), "status": "error"}
     
 
-@mcp.tool("Sales_Target_Success")
-async def sales_target(year: str, month: str=None):
-    """ 
-    Employee Sales Report
-    - If both year and month are entered => Sales report for that month only
-    - If only year is entered => Sales report for the whole year
+# @mcp.tool("Sales_Target_Success")
+# async def sales_target(year: str, month: str=None):
+#     """ 
+#     Employee Sales Report
+#     - If both year and month are entered => Sales report for that month only
+#     - If only year is entered => Sales report for the whole year
 
-    Args:
-    year (str): Year (4 digits) e.g. "2024"
-    month (str, optional): Month (2 digits) e.g. "04" If not entered, the whole year
+#     Args:
+#     year (str): Year (4 digits) e.g. "2024"
+#     month (str, optional): Month (2 digits) e.g. "04" If not entered, the whole year
 
-    Returns:
-    list[dict] | dict: Sales data or error message
-"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+#     Returns:
+#     list[dict] | dict: Sales data or error message
+# """
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
 
-        if month:
-            period = f"{year}-{month}-01"
-            query = f"""
-                SELECT 
-                    ns.personid,
-                    ne.fullname,
-                    ns.price,
-                    ns.planned_value,
-                    (ns.price - ns.planned_value) AS over_target
-                FROM 
-                    nation_saleperformance AS ns
-                JOIN 
-                    nation_employee AS ne
-                ON 
-                    ns.personid = ne.id
-                WHERE 
-                    ns.period = '{period}'
-                AND ns.price >= ns.planned_value;
-            """
-        else:  
-            query = f"""
-                SELECT 
-                    ne.id AS personid,
-                    ne.fullname,
-                    COALESCE(SUM(ns.price), 0) AS total_price,
-                    COALESCE(SUM(ns.planned_value), 0) AS total_planned_value,
-                    (COALESCE(SUM(ns.price), 0) - COALESCE(SUM(ns.planned_value), 0)) AS over_target
-                FROM 
-                    nation_employee AS ne
-                LEFT JOIN 
-                    nation_saleperformance AS ns
-                ON 
-                    ns.personid = ne.id
-                AND YEAR(ns.period) = '{year}'
-                GROUP BY 
-                    ne.id, ne.fullname
-                HAVING 
-                    total_price > 0
-                ORDER BY 
-                    over_target DESC;
-            """
-        cursor.execute(query)
-        results = cursor.fetchall()
-        cursor.close()
-        conn.close()
+#         if month:
+#             period = f"{year}-{month}-01"
+#             query = f"""
+#                 SELECT 
+#                     ns.personid,
+#                     ne.fullname,
+#                     ns.price,
+#                     ns.planned_value,
+#                     (ns.price - ns.planned_value) AS over_target
+#                 FROM 
+#                     nation_saleperformance AS ns
+#                 JOIN 
+#                     nation_employee AS ne
+#                 ON 
+#                     ns.personid = ne.id
+#                 WHERE 
+#                     ns.period = '{period}'
+#                 AND ns.price >= ns.planned_value;
+#             """
+#         else:  
+#             query = f"""
+#                 SELECT 
+#                     ne.id AS personid,
+#                     ne.fullname,
+#                     COALESCE(SUM(ns.price), 0) AS total_price,
+#                     COALESCE(SUM(ns.planned_value), 0) AS total_planned_value,
+#                     (COALESCE(SUM(ns.price), 0) - COALESCE(SUM(ns.planned_value), 0)) AS over_target
+#                 FROM 
+#                     nation_employee AS ne
+#                 LEFT JOIN 
+#                     nation_saleperformance AS ns
+#                 ON 
+#                     ns.personid = ne.id
+#                 AND YEAR(ns.period) = '{year}'
+#                 GROUP BY 
+#                     ne.id, ne.fullname
+#                 HAVING 
+#                     total_price > 0
+#                 ORDER BY 
+#                     over_target DESC;
+#             """
+#         cursor.execute(query)
+#         results = cursor.fetchall()
+#         cursor.close()
+#         conn.close()
         
-        output = []
-        for row in results:
-            if month:
-                output.append({
-                    "personid": row[0],
-                    "fullname": row[1],
-                    "price": int(row[2]),
-                    "planned_value": int(row[3]),
-                    "over_target": int(row[4])
-                })
-            else:
-                output.append({
-                    "personid": row[0],
-                    "fullname": row[1],
-                    "total_price": int(row[2]),
-                    "total_planned_value": int(row[3]),
-                    "over_target": int(row[4])
-                })
+#         output = []
+#         for row in results:
+#             if month:
+#                 output.append({
+#                     "personid": row[0],
+#                     "fullname": row[1],
+#                     "price": int(row[2]),
+#                     "planned_value": int(row[3]),
+#                     "over_target": int(row[4])
+#                 })
+#             else:
+#                 output.append({
+#                     "personid": row[0],
+#                     "fullname": row[1],
+#                     "total_price": int(row[2]),
+#                     "total_planned_value": int(row[3]),
+#                     "over_target": int(row[4])
+#                 })
 
-        return json.dumps(output,ensure_ascii=False)
+#         return json.dumps(output,ensure_ascii=False)
         
-    except Error as e:
-        logger.error(f"Error executing query: {e}")
-        return {"result": json.dumps({"error": str(e)}), "status": "error"}
+#     except Error as e:
+#         logger.error(f"Error executing query: {e}")
+#         return {"result": json.dumps({"error": str(e)}), "status": "error"}
 
 
-if __name__ == "__main__":
-    print("\n--- Starting FastMCP Server via __main__ ---")
-    mcp.run()
+
+#########################################################################
+# @mcp.tool("list_available_tools")
+# async def list_available_tools():
+#     """List all tools available in this MCP server."""
+#     tools = [
+#         {
+#             "name": "execute_select_or_show",
+#             "description": "Execute only SELECT or SHOW queries."
+#         },
+#     ]
+    
+#     return {"result": json.dumps({"tools": tools})}
+#########################################################################
+
+
+# if __name__ == "__main__":
+#     print("\n--- Starting FastMCP Server via __main__ ---")
+#     mcp.run()
 
     #fastmcp run mcp_server.py:mcp --transport sse --port 8080 --host 0.0.0.0

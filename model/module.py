@@ -10,6 +10,4 @@ class RequestMessage(BaseModel):
 
 class AgentResponse(BaseModel):
     response: str
-    plan: Optional[str] = None
-    poster: Optional[str] = None
     report: Optional[str] = None

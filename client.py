@@ -5,10 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage,AIMessage,SystemMessage
 from langchain_openai import ChatOpenAI
 from model.module import RequestMessage, AgentResponse
-from prompt.p import DATA_ANALYZE
+from prompt.p import DATABASE_ADMIN,CSV_READER 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from typing import Dict, Any
 from langgraph.prebuilt import create_react_agent
+from agent.graph import react_agent
 import asyncio
 
 # Load environment variables
@@ -32,7 +33,6 @@ llm = ChatOpenAI(
     temperature=0
 )
 
-
 @app.post("/chat")
 async def chat(chatmessage: RequestMessage):
     try:
@@ -55,13 +55,14 @@ async def chat(chatmessage: RequestMessage):
                     }
                 }
             ) as client:    
-                agent = create_react_agent(llm, client.get_tools(),prompt=DATA_ANALYZE)
+                agent = create_react_agent(llm, client.get_tools(),prompt=CSV_READER)
                 result = await agent.ainvoke({"messages": messages})   
                 print(result)     
                 final_result = result["messages"][-1].content
                 
                 return{
-                    "response": final_result
+                    "response": final_result,
+                    "full_messages": result["messages"]
                 }
             
         except Exception as e:
@@ -69,7 +70,41 @@ async def chat(chatmessage: RequestMessage):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
+    
 
+# @app.post("/create-report", response_model=AgentResponse)
+# async def create_report(request: RequestMessage):
+#     try:
+#         messages = []
+#         # query = None
+#         for msg in request.messages:
+#             if msg.role == 'human':
+#                 messages = msg.content
+#                 break
+        
+#         try:
+#             async with MultiServerMCPClient(
+#                 {
+#                     "db": {
+#                         "url": "http://localhost:8080/sse",
+#                         "transport": "sse",
+#                     }
+#                 }
+#             ) as client:
+#                 print("MCP SERVER IS CONNECTED")
+#                 agent = react_agent(llm, client.get_tools(), "async")
+#                 result = agent.invoke({"messages": [HumanMessage(content=messages)]})
+                
+#                 plan = result.get("report_plan","No report was generated.")
+                
+#                 return AgentResponse(
+#                     response=plan
+#                 )
+#         except Exception as e:
+#             raise HTTPException(status_code=500, detail=f"Error connecting to MCP server: {str(e)}")
+            
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error creating report: {str(e)}")
 
 @app.get("/")
 async def health_check():

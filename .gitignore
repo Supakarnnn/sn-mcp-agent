@@ -9,7 +9,9 @@ wheels/
 *uv.lock
 *pyproject.toml
 *.python-version
+csv_file/
 
 # Virtual environments
 *.venv
 *.env
+test.py
