@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage,AIMessage,SystemMessage
 from langchain_openai import ChatOpenAI
 from model.module import RequestMessage, AgentResponse
-from prompt.p import DATABASE_ADMIN,CSV_READER 
+from prompt.p import DATABASE_ADMIN
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from typing import Dict, Any
 from langgraph.prebuilt import create_react_agent
@@ -55,7 +55,7 @@ async def chat(chatmessage: RequestMessage):
                     }
                 }
             ) as client:    
-                agent = create_react_agent(llm, client.get_tools(),prompt=CSV_READER)
+                agent = create_react_agent(llm, client.get_tools(),prompt=DATABASE_ADMIN)
                 result = await agent.ainvoke({"messages": messages})   
                 print(result)     
                 final_result = result["messages"][-1].content
