@@ -6,6 +6,7 @@ import asyncio
 import json
 from mcp.types import Resource, Tool, TextContent
 from mysql.connector import connect, Error
+from decimal import Decimal
 
 load_dotenv()
 
@@ -17,6 +18,12 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger("MCP Server")
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
 
 # DB_CONFIG = {
 #     "host": os.environ.get("MYSQL_HOST"),
@@ -66,6 +73,66 @@ async def execute_select_or_show(query: str):
     except Error as e:
         logger.error(f"Error executing query: {e}")
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
+    
+
+@mcp.tool("employee_late_summary_by_group")
+async def employee_late_summary_by_group(group: str, year: str): 
+    """
+    Query employee summary data from database(MySQL) by filtering by employee group.
+    If user requires 2023, insert year = "employee_2023"
+    If user requires 2024, insert year = "employee_2024"
+
+    args:
+        group (str): Name of group such as "Back Office"
+        year (str): Must be "employee_2023" or "employee_2024"
+
+    result:
+        str: JSON string including:
+            - employee_group, employee_name, total_work_hours, total_leave_hours, total_late_count, total_late_hours
+    """
+
+    try:
+        logger.info(f"LLM is trying to choose group: {group} and year: {year}")
+
+        if year not in ["employee_2023", "employee_2024"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+
+        query = f"""
+            SELECT 
+                employee_group,
+                employee_name,
+                SUM(work_hours) AS total_work_hours,
+                SUM(leave_hours) AS total_leave_hours,
+                SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS total_late_count,
+                SUM(late_hours) AS total_late_hours
+            FROM 
+                {year}
+            WHERE 
+                employee_group = %s
+            GROUP BY 
+                employee_team,
+                employee_group,
+                employee_id,
+                employee_name
+            ORDER BY 
+                employee_team,
+                employee_group,
+                total_late_count DESC
+        """
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (group,))
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        return json.dumps(results, ensure_ascii=False, cls=DecimalEncoder)
+
+    except Exception as e:
+        logger.error(f"Error executing query: {e}")
+        return {"result": json.dumps({"error": str(e)}), "status": "error"}
+
     
 
 # @mcp.tool("Sales_Target_Success")

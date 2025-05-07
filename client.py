@@ -58,8 +58,10 @@ async def chat(chatmessage: RequestMessage):
                 agent = create_react_agent(llm, client.get_tools(),prompt=DATABASE_ADMIN)
                 result = await agent.ainvoke({"messages": messages})   
                 print(result)     
+                # for chunk in agent.astream(chat, stream_mode="updates"):
+                #     print(chunk)
                 final_result = result["messages"][-1].content
-                
+
                 return{
                     "response": final_result,
                     "full_messages": result["messages"]
