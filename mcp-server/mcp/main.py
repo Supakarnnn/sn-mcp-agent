@@ -205,7 +205,7 @@ def employee_leave_summary(name: str, group: str, year: str) -> str:
 
         cursor = conn.cursor(dictionary=True)
 
-        query = """
+        query = f"""
             SELECT 
                 employee_id,
                 employee_name,
