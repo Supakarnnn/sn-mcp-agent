@@ -51,7 +51,14 @@ def get_db_connection():
 
 @mcp.tool("execute_select_or_show")
 async def execute_select_or_show(query: str):
-    """Execute only SELECT or SHOW queries."""
+    """
+    This is basic tool to Execute only SELECT or SHOW queries.
+    If user want basic information try this basic tool
+
+    args:
+        Execute only SELECT or SHOW queries
+    
+    """
     try:
         logger.info(f"LLM is trying to execute: {query}")
 
@@ -64,7 +71,6 @@ async def execute_select_or_show(query: str):
         cursor = conn.cursor()
         cursor.execute(query)
         results = cursor.fetchall()
-        print(results)
         columns = [desc[0] for desc in cursor.description] if cursor.description else []
         conn.close()
         
@@ -73,12 +79,14 @@ async def execute_select_or_show(query: str):
     except Error as e:
         logger.error(f"Error executing query: {e}")
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
-    
 
-@mcp.tool("employee_late_summary_by_group")
-async def employee_late_summary_by_group(group: str, year: str): 
+
+#YEAR
+####################################################################################################################################
+@mcp.tool("employee_late_summary_by_group_year")
+async def employee_late_summary_by_group_year(group: str, year: str): 
     """
-    Query employee summary data from database(MySQL) by filtering by employee group.
+    Tool that Query employee summary data from database(MySQL) by filtering by employee group.
     If user requires 2023, insert year = "employee_2023"
     If user requires 2024, insert year = "employee_2024"
 
@@ -88,11 +96,16 @@ async def employee_late_summary_by_group(group: str, year: str):
 
     result:
         str: JSON string including:
-            - employee_group, employee_name, total_work_hours, total_leave_hours, total_late_count, total_late_hours
+            - employee_group, 
+            employee_name, 
+            total_work_hours (ชั่วโมงการทำงาน), 
+            total_leave_hours (ชั่วโมงที่ลางาน), 
+            total_late_count (จำนวนครั้งที่มาสาย), 
+            total_late_hours (ชั่วโมงที่มาสาย)
     """
 
     try:
-        logger.info(f"LLM is trying to choose group: {group} and year: {year}")
+        logger.info(f"LLM is trying to use employee_late_summary_by_group and choose group: {group} and year: {year}")
 
         if year not in ["employee_2023", "employee_2024"]:
             raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
@@ -132,99 +145,72 @@ async def employee_late_summary_by_group(group: str, year: str):
     except Exception as e:
         logger.error(f"Error executing query: {e}")
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
-
     
 
-# @mcp.tool("Sales_Target_Success")
-# async def sales_target(year: str, month: str=None):
-#     """ 
-#     Employee Sales Report
-#     - If both year and month are entered => Sales report for that month only
-#     - If only year is entered => Sales report for the whole year
 
-#     Args:
-#     year (str): Year (4 digits) e.g. "2024"
-#     month (str, optional): Month (2 digits) e.g. "04" If not entered, the whole year
+@mcp.tool("employee_sick_count_year")
+async def employee_sick_count_year(group: str, year: str):
+    """
+    Tool that Query count Take leave for group of employee from database(MySQL) by filtering by employee group.
+    If user requires 2023, insert year = "employee_2023"
+    If user requires 2024, insert year = "employee_2024"
 
-#     Returns:
-#     list[dict] | dict: Sales data or error message
-# """
-#     try:
-#         conn = get_db_connection()
-#         cursor = conn.cursor()
+    args:
+        group (str): Name of group such as "Back Office"
+        year (str): Must be "employee_2023" or "employee_2024"
 
-#         if month:
-#             period = f"{year}-{month}-01"
-#             query = f"""
-#                 SELECT 
-#                     ns.personid,
-#                     ne.fullname,
-#                     ns.price,
-#                     ns.planned_value,
-#                     (ns.price - ns.planned_value) AS over_target
-#                 FROM 
-#                     nation_saleperformance AS ns
-#                 JOIN 
-#                     nation_employee AS ne
-#                 ON 
-#                     ns.personid = ne.id
-#                 WHERE 
-#                     ns.period = '{period}'
-#                 AND ns.price >= ns.planned_value;
-#             """
-#         else:  
-#             query = f"""
-#                 SELECT 
-#                     ne.id AS personid,
-#                     ne.fullname,
-#                     COALESCE(SUM(ns.price), 0) AS total_price,
-#                     COALESCE(SUM(ns.planned_value), 0) AS total_planned_value,
-#                     (COALESCE(SUM(ns.price), 0) - COALESCE(SUM(ns.planned_value), 0)) AS over_target
-#                 FROM 
-#                     nation_employee AS ne
-#                 LEFT JOIN 
-#                     nation_saleperformance AS ns
-#                 ON 
-#                     ns.personid = ne.id
-#                 AND YEAR(ns.period) = '{year}'
-#                 GROUP BY 
-#                     ne.id, ne.fullname
-#                 HAVING 
-#                     total_price > 0
-#                 ORDER BY 
-#                     over_target DESC;
-#             """
-#         cursor.execute(query)
-#         results = cursor.fetchall()
-#         cursor.close()
-#         conn.close()
-        
-#         output = []
-#         for row in results:
-#             if month:
-#                 output.append({
-#                     "personid": row[0],
-#                     "fullname": row[1],
-#                     "price": int(row[2]),
-#                     "planned_value": int(row[3]),
-#                     "over_target": int(row[4])
-#                 })
-#             else:
-#                 output.append({
-#                     "personid": row[0],
-#                     "fullname": row[1],
-#                     "total_price": int(row[2]),
-#                     "total_planned_value": int(row[3]),
-#                     "over_target": int(row[4])
-#                 })
+    result:
+        str: JSON string including:
+            - employee_group, employee_name, Annual_Day, Sick_Day, Errand_Day, total_take_leave_day
+    
+    """
 
-#         return json.dumps(output,ensure_ascii=False)
-        
-#     except Error as e:
-#         logger.error(f"Error executing query: {e}")
-#         return {"result": json.dumps({"error": str(e)}), "status": "error"}
+    try:
+        logger.info(f"LLM is trying to use employee_sick_count_year and choose group: {group} and year: {year}")
 
+        if year not in ["employee_2023", "employee_2024"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
 
+        query = f"""
+            SELECT 
+                employee_name,
+                employee_group,
+                SUM(CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END) AS Annual_Day,
+                SUM(CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END) AS Sick_Day,
+                SUM(CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END) AS Errand_Day,
+                SUM(
+                    CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END +
+                    CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END +
+                    CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END
+                ) AS total_take_leave_day
+            FROM 
+                {year}
+            WHERE 
+                leave_hours > 0
+                AND employee_group = %s
+            GROUP BY 
+                employee_name,
+                employee_group
+            ORDER BY 
+                employee_name;
+
+        """ 
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (group,))
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        return json.dumps(results, ensure_ascii=False, cls=DecimalEncoder)
+
+    except Exception as e:
+        logger.error(f"Error executing query: {e}")
+        return {"result": json.dumps({"error": str(e)}), "status": "error"}
+   
+    
+#############################################################################################################
 
 #########################################################################
 @mcp.tool("list_available_tools")
@@ -235,6 +221,14 @@ async def list_available_tools():
             "name": "execute_select_or_show",
             "description": "Execute only SELECT or SHOW queries."
         },
+        {
+            "name": "employee_late_summary_by_group_year",
+            "description": "Employee check-in summary data"  
+        },
+        {
+            "name": "employee_sick_count_year",
+            "description": "Employee Take leave summary data"
+        }
     ]
     
     return {"result": json.dumps({"tools": tools})}

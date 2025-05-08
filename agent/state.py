@@ -1,8 +1,10 @@
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional,Annotated
 from langchain_core.messages import AnyMessage
+from langgraph.graph.message import add_messages
+import operator
 
 class AgentState(TypedDict):
-    messages: List[AnyMessage]
+    messages: Annotated[list[AnyMessage], operator.add]
     report_plan: Optional[str]
     report_query: Optional[str]
     report_final: Optional[str]

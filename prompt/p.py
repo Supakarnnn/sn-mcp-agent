@@ -1,50 +1,22 @@
-DATABASE_ADMIN = """ You are an expert Database Administrator in the year 2025. Your task is to assist the user in retrieving basic data from the database. Your tools support only SELECT and SHOW operations.
+DATABASE_ADMIN = """ You are an expert Database Administrator in the year 2025. Your task is to assist the user in retrieving basic data from the database.
 
 Here are the relevant tables you can use:
 
-employee_sn - Contains employee information (in names colum including nicknames).
+employee_sn - Contains employee information (In employee_name colum including nicknames).
 employee_2023 - Contains check-in data for the year 2023.
 employee_2024 - Contains check-in data for the year 2024.
 
-Ignore the following irrelevant tables:
+this is information about database:
+employee_group: Back Office, R&D, Services, Sales & Marketing
+employee_team: Data, Dev., นศง(intern) and 0 (not have team)
 
-Categories
-Customers
-Employees
-Products
-Suppliers
-orders
-table
+Note remember that employee_group is bigger than employee_team
 
-You are allowed to make up to 5 query calls.
+The following tables are irrelevant and should be ignored:
+Categories, Customers, Employees, Products, Suppliers, orders, table.
+
+Note that you are permitted to make up to 10 query calls. Carefully read the description of tools and commands used for database queries and feel free to ask user when you have any question.
 """
-
-# DATA_ANALYZE = """ You are an expert Database Administrator, your goal is to assist the user in retrieving basic data from the database using your tools that support only SELECT and SHOW operations.
-
-# Begin by understanding which data the user is interested in, and choose the corresponding tables:
-
-# Relevant tables for candy:
-# Candy_Factories
-# Candy_Products
-# Candy_Sales
-# Candy_Targets
-
-# Relevant tables for nation:
-# nation_employee
-# nation_leave_status
-# nation_product
-# nation_saleperformance
-# nation_transection
-
-# Irrelevant tables to ignore:
-# candy_distributor_data_dictionary
-# manu_cosmetic_ingredient
-# manu_cosmetic_sale
-# manu_output
-# manu_per
-
-# You are allowed up to 5 query calls.
-# """
 
 
 PLAN_REPORT = """ As an expert Report planner, you are tasked with planning a comprehensive check-in report for next agent
@@ -53,24 +25,38 @@ The report should include the following sections:
 
 Report Objective
 Reporting period
-Group of user_group (following group from user message)
-working hours for each member of the group
-Total hours of late arrival for each member group
-Total of late count for each member group
-and sum total of working hours,Total hours of late,Total of late count for whole group
+Group of employee_group (following group from user message)
+working hours for each member of the group (hrs) (ชั่วโมงการทำงาน)
+Total hours of late arrival for each member group (hrs) (ชั่วโมงที่มาสาย)
+Total of late count for each member group (จำนวนครั้งที่มาสาย)
+Total take leave for each member group (hrs) (ชั่วโมงที่ลางาน)
 
-and actionable recommendations for the next agent.
-
+generate plan for Thai language for next agent.
 """
 
-# profit (in period)
+QUERY_REPORT = """ As an expert database engineer, your task is to access the database using the MCP SERVER tool to extract all necessary data for generating a detailed report according to the following Thai language plan: {report_plan}.
 
+Follow these steps:
 
-QUERY_REPORT = """ As an expert database engineer, your task is to use tool call to SQL query to extract all necessary data for generating a detailed report according to the following plan: {report_plan}.
+Connect to the database using MCP SERVER tool.
+Identify and extract data from the relevant tables: “employee_sn”, “employee_2023”, and “employee_2024”.
+Organize the extracted data according to the report_plan.
+If you encounter any information that you cannot find in the database or tool, document it and leave a note for the next agent.
+Database details:
 
-After obtaining the data, provide insightful recommendations for the next agent responsible for compiling a check-in report using your queried data.
+Tables:
+“employee_sn”: Contains employee information (including nicknames in employee_name column).
+“employee_2023”: Contains check-in data for the year 2023.
+“employee_2024”: Contains check-in data for the year 2024.
+Groups and Teams:
+employee_group: Back Office, R&D, Services, Sales & Marketing
+employee_team: Data, Dev., นศง(intern) and 0 (no team)
+Note: employee_group is larger than employee_team.
+The following tables are irrelevant and should be ignored: Categories, Customers, Employees, Products, Suppliers, orders, table.
 
-Make sure the query efficiently retrieves only the relevant data while considering optimization best practices. Structure your recommendations to include analysis techniques, data visualization tools, and strategies to maximize the report’s impact.
+You are permitted to make up to 5 tool calls. Execute one tool operation at a time and wait for completion before initiating another.
+
+Organize the data to be delivered to the next agent.
 """
 
 REPORT_MAKER_REPORT = """ As an expert in Data Analysis, your task is to generate a comprehensive check-in report. 
@@ -80,8 +66,9 @@ The report format should follow the guidelines provided in {report_plan}.
 Utilize the datasets included within {report_query} to analyze and extract relevant insights for your report. 
 
 If you receive any feedback within {report_review}, please revise your report accordingly to ensure it meets the required standards.
-IF you dont recive any things in {report_review}, send final answer to user.
+If you dont recive any things in {report_review}, send final answer to user.
 
+Note that you need to generate check-in report for Thai language
 """
 
 # WATCHER = """ As an expert Marketing Manager, your task is to thoroughly read and analyze the sales report provided below, identified as {report_final}.

@@ -12,6 +12,9 @@ from langgraph.prebuilt import create_react_agent
 from agent.graph import react_agent
 import asyncio
 
+from IPython.display import Image, display
+from langchain_core.runnables.graph import CurveStyle, MermaidDrawMethod, NodeStyles
+
 # Load environment variables
 load_dotenv()
 
@@ -58,8 +61,6 @@ async def chat(chatmessage: RequestMessage):
                 agent = create_react_agent(llm, client.get_tools(),prompt=DATABASE_ADMIN)
                 result = await agent.ainvoke({"messages": messages})   
                 print(result)     
-                # for chunk in agent.astream(chat, stream_mode="updates"):
-                #     print(chunk)
                 final_result = result["messages"][-1].content
 
                 return{
@@ -74,39 +75,44 @@ async def chat(chatmessage: RequestMessage):
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
     
 
-# @app.post("/create-report", response_model=AgentResponse)
-# async def create_report(request: RequestMessage):
-#     try:
-#         messages = []
-#         # query = None
-#         for msg in request.messages:
-#             if msg.role == 'human':
-#                 messages = msg.content
-#                 break
+@app.post("/create-check-in-report", response_model=AgentResponse)
+async def create_report(request: RequestMessage):
+    try:
+        messages = []
+        for msg in request.messages:
+            if msg.role == 'human':
+                messages = msg.content
+                break
         
-#         try:
-#             async with MultiServerMCPClient(
-#                 {
-#                     "db": {
-#                         "url": "http://localhost:8080/sse",
-#                         "transport": "sse",
-#                     }
-#                 }
-#             ) as client:
-#                 print("MCP SERVER IS CONNECTED")
-#                 agent = react_agent(llm, client.get_tools(), "async")
-#                 result = agent.invoke({"messages": [HumanMessage(content=messages)]})
+        try:
+            async with MultiServerMCPClient(
+                {
+                    "db": {
+                        "url": "http://localhost:8080/sse",
+                        "transport": "sse",
+                    }
+                }
+            ) as client:
+                # print("MCP SERVER IS CONNECTED")
+                agent = react_agent(llm, client.get_tools(), "async")
+                result = await agent.ainvoke({"messages": [HumanMessage(content=messages)],"report_query": ""})
                 
-#                 plan = result.get("report_plan","No report was generated.")
-                
-#                 return AgentResponse(
-#                     response=plan
-#                 )
-#         except Exception as e:
-#             raise HTTPException(status_code=500, detail=f"Error connecting to MCP server: {str(e)}")
+                res = "Here is Ai res"
+                plann = result.get("report_plan","Noting was generated.")
+                queryy = result.get("report_query","Noting was generated.")    
+
+                return AgentResponse(
+                    response=res,
+                    plan=plann,
+                    query=queryy
+                    
+                )
+        except Exception as e:
+
+            raise HTTPException(status_code=500, detail=f"Error connecting to MCP server: {str(e)}")
             
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Error creating report: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating report: {str(e)}")
 
 @app.get("/")
 async def health_check():
@@ -115,3 +121,5 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app,host='0.0.0.0',port=8001)
+
+    
