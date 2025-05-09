@@ -40,7 +40,6 @@ Follow these steps:
 
 Connect to the database using MCP SERVER tool.
 Identify and extract data from the relevant tables: “employee_sn”, “employee_2023”, and “employee_2024”.
-Organize the extracted data according to the report_plan.
 If you encounter any information that you cannot find in the database or tool, document it and leave a note for the next agent.
 Database details:
 
@@ -54,9 +53,7 @@ employee_team: Data, Dev., นศง(intern) and 0 (no team)
 Note: employee_group is larger than employee_team.
 The following tables are irrelevant and should be ignored: Categories, Customers, Employees, Products, Suppliers, orders, table.
 
-You are permitted to make up to 5 tool calls. Execute one tool operation at a time and wait for completion before initiating another.
-
-Organize the data to be delivered to the next agent.
+Note that you are permitted to make up to 5 tool calls.
 """
 
 REPORT_MAKER_REPORT = """ As an expert in Data Analysis, your task is to generate a comprehensive check-in report. 

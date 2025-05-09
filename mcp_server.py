@@ -96,7 +96,7 @@ async def employee_late_summary_by_group_year(group: str, year: str):
 
     result:
         str: JSON string including:
-            - employee_group, 
+            employee_group, 
             employee_name, 
             total_work_hours (ชั่วโมงการทำงาน), 
             total_leave_hours (ชั่วโมงที่ลางาน), 
@@ -137,6 +137,7 @@ async def employee_late_summary_by_group_year(group: str, year: str):
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, (group,))
         results = cursor.fetchall()
+        print(results)
         cursor.close()
         conn.close()
 

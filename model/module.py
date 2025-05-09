@@ -12,3 +12,4 @@ class AgentResponse(BaseModel):
     response: str
     plan: str
     query: str
+    report: str

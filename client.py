@@ -11,7 +11,7 @@ from typing import Dict, Any
 from langgraph.prebuilt import create_react_agent
 from agent.graph import react_agent
 import asyncio
-
+from agent.react import p_react_agent
 from IPython.display import Image, display
 from langchain_core.runnables.graph import CurveStyle, MermaidDrawMethod, NodeStyles
 
@@ -33,47 +33,43 @@ llm = ChatOpenAI(
     base_url=os.environ.get("BASE_URL"),
     model='gpt-4o-mini',
     api_key=os.environ["OPENAI_API_KEY"],
-    temperature=0
+    temperature=0,
+    top_p=0
+    # max_completion_tokens=4096
 )
 
 @app.post("/chat")
 async def chat(chatmessage: RequestMessage):
-    try:
-        messages = []
-        
-        for chat in chatmessage.messages:
-            if chat.role == 'ai':
-                messages.append({"role": "assistant", "content": chat.content})
-            elif chat.role == 'human':
-                messages.append({"role": "user", "content": chat.content})
-            elif chat.role == 'system':
-                messages.append({"role": "system", "content": chat.content})
-        
-        try:
-            async with MultiServerMCPClient(
-                {
-                    "db": {
-                        "url": "http://localhost:8080/sse",
-                        "transport": "sse",
-                    }
-                }
-            ) as client:    
-                agent = create_react_agent(llm, client.get_tools(),prompt=DATABASE_ADMIN)
-                result = await agent.ainvoke({"messages": messages})   
-                print(result)     
-                final_result = result["messages"][-1].content
-
-                return{
-                    "response": final_result,
-                    "full_messages": result["messages"]
-                }
-            
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error connecting to MCP server: {str(e)}")
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
+    messages = []
     
+    for chat in chatmessage.messages:
+        if chat.role == 'ai':
+            messages.append({"role": "assistant", "content": chat.content})
+        elif chat.role == 'human':
+            messages.append(HumanMessage(content=chat.content))
+        elif chat.role == 'system':
+            messages.append({"role": "system", "content": chat.content})
+    
+    print(messages)
+
+    async with MultiServerMCPClient(
+        {
+            "db": {
+                "url": "http://localhost:8080/sse",
+                "transport": "sse",
+            }
+        }
+    ) as client:    
+        agent = p_react_agent(llm, client.get_tools(),DATABASE_ADMIN)
+        result = await agent.ainvoke({"messages": messages})   
+        final_result = result["messages"][-1].content
+
+        return{
+            "response": final_result,
+            "full_messages": result["messages"]
+        }
+        
+
 
 @app.post("/create-check-in-report", response_model=AgentResponse)
 async def create_report(request: RequestMessage):
@@ -95,17 +91,18 @@ async def create_report(request: RequestMessage):
             ) as client:
                 # print("MCP SERVER IS CONNECTED")
                 agent = react_agent(llm, client.get_tools(), "async")
-                result = await agent.ainvoke({"messages": [HumanMessage(content=messages)],"report_query": ""})
+                result = await agent.ainvoke({"messages": [HumanMessage(content=messages)]},{"recursion_limit": 15})
                 
                 res = "Here is Ai res"
                 plann = result.get("report_plan","Noting was generated.")
-                queryy = result.get("report_query","Noting was generated.")    
+                queryy = result.get("report_query","Noting was generated.")
+                reportt = result.get("report_final","Noting was generated.")    
 
                 return AgentResponse(
                     response=res,
                     plan=plann,
-                    query=queryy
-                    
+                    query=queryy,
+                    report=reportt
                 )
         except Exception as e:
 
