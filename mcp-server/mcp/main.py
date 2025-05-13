@@ -91,7 +91,7 @@ def employee_attendance_summary(group: str, year: str) -> str:
 
 
 
-
+# test
 @mcp tool(
     name="employee_late_summary",
     description="สรุปจำนวนครั้งที่มาสาย และจำนวนวันมาสายของพนักงานรายบุคคลในกลุ่มที่ระบุ สำหรับปีที่กำหนด"
