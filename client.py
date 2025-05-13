@@ -9,7 +9,7 @@ from prompt.p import DATABASE_ADMIN
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from typing import Dict, Any
 from langgraph.prebuilt import create_react_agent
-from agent.graph import react_agent
+from agent.graph import react_agent,react_sick_agent
 import asyncio
 from agent.react import p_react_agent
 from IPython.display import Image, display
@@ -50,7 +50,7 @@ async def chat(chatmessage: RequestMessage):
         elif chat.role == 'system':
             messages.append({"role": "system", "content": chat.content})
     
-    print(messages)
+    # print(messages)
 
     async with MultiServerMCPClient(
         {
@@ -99,7 +99,48 @@ async def create_report(request: RequestMessage):
                 reportt = result.get("report_final","Noting was generated.")    
 
                 return AgentResponse(
-                    response=res,
+                    response=reportt,
+                    plan=plann,
+                    query=queryy,
+                    report=reportt
+                )
+        except Exception as e:
+
+            raise HTTPException(status_code=500, detail=f"Error connecting to MCP server: {str(e)}")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating report: {str(e)}")
+    
+
+@app.post("/create-take-leave-report", response_model=AgentResponse)
+async def create_sick_report(request: RequestMessage):
+    try:
+        messages = []
+        for msg in request.messages:
+            if msg.role == 'human':
+                messages = msg.content
+                break
+        
+        try:
+            async with MultiServerMCPClient(
+                {
+                    "db": {
+                        "url": "http://localhost:8080/sse",
+                        "transport": "sse",
+                    }
+                }
+            ) as client:
+                # print("MCP SERVER IS CONNECTED")
+                agent = react_sick_agent(llm, client.get_tools(), "async")
+                result = await agent.ainvoke({"messages": [HumanMessage(content=messages)]},{"recursion_limit": 15})
+                
+                res = "Here is Ai res"
+                plann = result.get("report_plan","Noting was generated.")
+                queryy = result.get("report_query","Noting was generated.")
+                reportt = result.get("report_final","Noting was generated.")    
+
+                return AgentResponse(
+                    response=reportt,
                     plan=plann,
                     query=queryy,
                     report=reportt

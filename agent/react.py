@@ -4,11 +4,9 @@ from typing import Literal
 from langchain_openai import ChatOpenAI
 from typing import TypedDict
 
-
-
-    
 class ReactState(TypedDict):
     messages: list[AnyMessage]
+    
 def p_react_agent(llm : ChatOpenAI , tools : list, system_prompt : str | None = None):
     model_with_tools = llm.bind_tools(tools)
 
@@ -33,7 +31,7 @@ def p_react_agent(llm : ChatOpenAI , tools : list, system_prompt : str | None = 
         print("---------------------------------------------------------------------------")
         print(HumaHuman)
         print("---------------------------------------------------------------------------")
-        return {"messages": state["messages"]+ messages+ [HumaHuman]}
+        return {"messages": state["messages"]+ messages + [HumaHuman]}
 
     def should_continue(state: ReactState) -> Literal["tools", "__end__"]:
         messages = state["messages"]

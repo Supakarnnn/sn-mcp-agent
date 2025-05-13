@@ -10,6 +10,6 @@ class RequestMessage(BaseModel):
 
 class AgentResponse(BaseModel):
     response: str
-    plan: str
-    query: str
-    report: str
+    plan: Optional[str]
+    query: Optional[str]
+    report: Optional[str]

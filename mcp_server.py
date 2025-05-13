@@ -53,7 +53,7 @@ def get_db_connection():
 async def execute_select_or_show(query: str):
     """
     This is basic tool to Execute only SELECT or SHOW queries.
-    If user want basic information try this basic tool
+    If user want basic information try this basic tool first.
 
     args:
         Execute only SELECT or SHOW queries
@@ -83,12 +83,11 @@ async def execute_select_or_show(query: str):
 
 #YEAR
 ####################################################################################################################################
-@mcp.tool("employee_late_summary_by_group_year")
-async def employee_late_summary_by_group_year(group: str, year: str): 
+@mcp.tool("late_summary_by_group_year")
+async def late_summary_by_group_year(group: str, year: str): 
     """
-    Tool that Query employee summary data from database(MySQL) by filtering by employee group.
-    If user requires 2023, insert year = "employee_2023"
-    If user requires 2024, insert year = "employee_2024"
+    (เครื่องมือนี้เกี่ยวกับข้อมูลการเช็คอินหรือเข้างานของทั้งปี)
+    Tool that give check-in data from database(MySQL) by filtering by employee group. and summary by year
 
     args:
         group (str): Name of group such as "Back Office"
@@ -105,7 +104,7 @@ async def employee_late_summary_by_group_year(group: str, year: str):
     """
 
     try:
-        logger.info(f"LLM is trying to use employee_late_summary_by_group and choose group: {group} and year: {year}")
+        logger.info(f"LLM is trying to use late_summary_by_group_year and choose group: {group} and year: {year}")
 
         if year not in ["employee_2023", "employee_2024"]:
             raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
@@ -149,12 +148,11 @@ async def employee_late_summary_by_group_year(group: str, year: str):
     
 
 
-@mcp.tool("employee_sick_count_year")
-async def employee_sick_count_year(group: str, year: str):
+@mcp.tool("sick_count_year")
+async def sick_count_year(group: str, year: str):
     """
-    Tool that Query count Take leave for group of employee from database(MySQL) by filtering by employee group.
-    If user requires 2023, insert year = "employee_2023"
-    If user requires 2024, insert year = "employee_2024"
+    (เครื่องมือนี้เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ของทั้งปี)
+    Tool that give Take leave data from database(MySQL) by filtering by employee group. and summary by year
 
     args:
         group (str): Name of group such as "Back Office"
@@ -162,12 +160,17 @@ async def employee_sick_count_year(group: str, year: str):
 
     result:
         str: JSON string including:
-            - employee_group, employee_name, Annual_Day, Sick_Day, Errand_Day, total_take_leave_day
+            employee_group, 
+            employee_name, 
+            Annual_Day (จำนวนวันลาพักผ่อน), 
+            Sick_Day (จำนวนวันลาป่วย), 
+            Errand_Day (จำนวนวันลากิจ), 
+            total_take_leave_day (จำนวนวันลาทั้งหมด)
     
     """
 
     try:
-        logger.info(f"LLM is trying to use employee_sick_count_year and choose group: {group} and year: {year}")
+        logger.info(f"LLM is trying to use sick_count_year and choose group: {group} and year: {year}")
 
         if year not in ["employee_2023", "employee_2024"]:
             raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
@@ -213,26 +216,161 @@ async def employee_sick_count_year(group: str, year: str):
     
 #############################################################################################################
 
-#########################################################################
-@mcp.tool("list_available_tools")
-async def list_available_tools():
-    """List all tools available in this MCP server."""
-    tools = [
-        {
-            "name": "execute_select_or_show",
-            "description": "Execute only SELECT or SHOW queries."
-        },
-        {
-            "name": "employee_late_summary_by_group_year",
-            "description": "Employee check-in summary data"  
-        },
-        {
-            "name": "employee_sick_count_year",
-            "description": "Employee Take leave summary data"
-        }
-    ]
+#Date
+#############################################################################################################
+@mcp.tool("late_summary_by_date")
+async def late_summary_by_date(group: str, year: str,start_date: str,end_date: str): 
+    """
+    (เครื่องมือนี้เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ในช่วงเวลาที่กำหนด)
+    Tool that give check-in data from database(MySQL) by filtering by employee group. and summary by date
+
+    args:
+        group (str): Name of group such as "Back Office"
+        year (str): Must be "employee_2023" or "employee_2024"
+        start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
+        end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
+
+    result:
+        str: JSON string including:
+            employee_group, 
+            employee_name, 
+            total_work_hours (ชั่วโมงการทำงาน), 
+            total_leave_hours (ชั่วโมงที่ลางาน), 
+            total_late_count (จำนวนครั้งที่มาสาย), 
+            total_leave_hours (ชั่วโมงที่มาสาย)
+    """
+
+    try:
+        logger.info(f"LLM is trying to use late_summary_by_date and choose group: {group} and year: {year} and date: {start_date} to {end_date}")
+
+        if year not in ["employee_2023", "employee_2024"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+
+        query = f"""
+            SELECT 
+                employee_group,
+                employee_name,
+                SUM(work_hours) AS total_work_hours,
+                SUM(late_hours ) AS total_late_hours,
+                SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS total_late_count,
+                SUM(leave_hours) AS total_leave_hours
+            FROM 
+                {year}
+            WHERE 
+                employee_group = %s
+                AND checkin_date BETWEEN '{start_date}' AND '{end_date}'
+            GROUP BY 
+                employee_group,
+                employee_name
+            ORDER BY 
+                employee_group,
+                total_late_hours DESC;
+        """
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (group,))
+        results = cursor.fetchall()
+        print(results)
+        cursor.close()
+        conn.close()
+
+        return json.dumps(results, ensure_ascii=False, cls=DecimalEncoder)
+
+    except Exception as e:
+        logger.error(f"Error executing query: {e}")
+        return {"result": json.dumps({"error": str(e)}), "status": "error"}
     
-    return {"result": json.dumps({"tools": tools})}
+
+@mcp.tool("sick_summary_by_date")
+async def sick_summary_by_date(group: str, year: str,start_date: str,end_date: str): 
+    """
+    (เครื่องมือนี้เกี่ยวกับข้อมูลการเช็คอินหรือเข้างานของ ช่วงเวลาที่กำหนด)
+    Tool that give check-in data from database(MySQL) by filtering by employee group. and summary by date
+
+    args:
+        group (str): Name of group such as "Back Office"
+        year (str): Must be "employee_2023" or "employee_2024"
+        start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
+        end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
+
+    result:
+        str: JSON string including:
+            employee_group, 
+            employee_name, 
+            Annual_Day (จำนวนวันลาพักผ่อน), 
+            Sick_Day (จำนวนวันลาป่วย), 
+            Errand_Day (จำนวนวันลากิจ), 
+            total_take_leave_day (จำนวนวันลาทั้งหมด)
+    """
+
+    try:
+        logger.info(f"LLM is trying to use late_summary_by_date and choose group: {group} and year: {year} and date: {start_date} to {end_date}")
+
+        if year not in ["employee_2023", "employee_2024"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+
+        query = f"""
+           SELECT 
+                employee_name,
+                employee_group,
+                SUM(CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END) AS Annual_Day,
+                SUM(CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END) AS Sick_Day,
+                SUM(CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END) AS Errand_Day,
+                SUM(
+                    CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END +
+                    CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END +
+                    CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END
+                ) AS total_take_leave_day
+            FROM 
+                {year}
+            WHERE 
+                employee_group = %s
+                AND checkin_date BETWEEN '{start_date}' AND '{end_date}'
+            GROUP BY 
+                employee_group,
+                employee_name
+            ORDER BY 
+                employee_group,
+                total_take_leave_day
+        """
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (group,))
+        results = cursor.fetchall()
+        print(results)
+        cursor.close()
+        conn.close()
+
+        return json.dumps(results, ensure_ascii=False, cls=DecimalEncoder)
+
+    except Exception as e:
+        logger.error(f"Error executing query: {e}")
+        return {"result": json.dumps({"error": str(e)}), "status": "error"}
+
+#############################################################################################################
+
+#########################################################################
+# @mcp.tool("list_available_tools")
+# async def list_available_tools():
+#     """List all tools available in this MCP server."""
+#     tools = [
+#         {
+#             "name": "execute_select_or_show",
+#             "description": "Execute only SELECT or SHOW queries."
+#         },
+#         {
+#             "name": "employee_late_summary_by_group_year",
+#             "description": "Employee check-in summary data"  
+#         },
+#         {
+#             "name": "employee_sick_count_year",
+#             "description": "Employee Take leave summary data"
+#         }
+#     ]
+    
+#     return {"result": json.dumps({"tools": tools})}
 #########################################################################
 
 
