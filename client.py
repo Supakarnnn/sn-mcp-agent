@@ -73,45 +73,36 @@ async def chat(chatmessage: RequestMessage):
 
 @app.post("/create-check-in-report", response_model=AgentResponse)
 async def create_report(request: RequestMessage):
-    try:
-        messages = []
-        for msg in request.messages:
-            if msg.role == 'human':
-                messages = msg.content
-                break
+    messages = []
+    for msg in request.messages:
+        if msg.role == 'human':
+            messages = msg.content
+            break
         
-        try:
-            async with MultiServerMCPClient(
-                {
-                    "db": {
-                        "url": "http://localhost:8080/sse",
-                        "transport": "sse",
-                    }
-                }
-            ) as client:
-                # print("MCP SERVER IS CONNECTED")
-                agent = react_agent(llm, client.get_tools(), "async")
-                result = await agent.ainvoke({"messages": [HumanMessage(content=messages)]},{"recursion_limit": 15})
-                
-                res = "Here is Ai res"
-                plann = result.get("report_plan","Noting was generated.")
-                queryy = result.get("report_query","Noting was generated.")
-                reportt = result.get("report_final","Noting was generated.")    
+    async with MultiServerMCPClient(
+        {
+            "db": {
+                "url": "http://localhost:8080/sse",
+                "transport": "sse",
+            }
+        }
+    ) as client:
+        # print("MCP SERVER IS CONNECTED")
+        agent = react_agent(llm, client.get_tools(), "async")
+        result = await agent.ainvoke({"messages": [HumanMessage(content=messages)],"recursion_limit": 15})
+        
+        plann = result.get("report_plan","Noting was generated.")
+        queryy = result.get("report_query","Noting was generated.")
+        reportt = result.get("report_final","Noting was generated.")    
 
-                return AgentResponse(
-                    response=reportt,
-                    plan=plann,
-                    query=queryy,
-                    report=reportt
-                )
-        except Exception as e:
-
-            raise HTTPException(status_code=500, detail=f"Error connecting to MCP server: {str(e)}")
-            
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creating report: {str(e)}")
+        print(reportt)
+        return AgentResponse(
+            response=reportt,
+            plan=plann,
+            query=queryy,
+            report=reportt
+        )
     
-
 @app.post("/create-take-leave-report", response_model=AgentResponse)
 async def create_sick_report(request: RequestMessage):
     try:
@@ -134,7 +125,6 @@ async def create_sick_report(request: RequestMessage):
                 agent = react_sick_agent(llm, client.get_tools(), "async")
                 result = await agent.ainvoke({"messages": [HumanMessage(content=messages)]},{"recursion_limit": 15})
                 
-                res = "Here is Ai res"
                 plann = result.get("report_plan","Noting was generated.")
                 queryy = result.get("report_query","Noting was generated.")
                 reportt = result.get("report_final","Noting was generated.")    

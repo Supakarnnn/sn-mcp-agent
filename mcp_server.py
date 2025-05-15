@@ -86,21 +86,7 @@ async def execute_select_or_show(query: str):
 @mcp.tool("late_summary_by_group_year")
 async def late_summary_by_group_year(group: str, year: str): 
     """
-    (เครื่องมือนี้เกี่ยวกับข้อมูลการเช็คอินหรือเข้างานของทั้งปี)
-    Tool that give check-in data from database(MySQL) by filtering by employee group. and summary by year
-
-    args:
-        group (str): Name of group such as "Back Office"
-        year (str): Must be "employee_2023" or "employee_2024"
-
-    result:
-        str: JSON string including:
-            employee_group, 
-            employee_name, 
-            total_work_hours (ชั่วโมงการทำงาน), 
-            total_leave_hours (ชั่วโมงที่ลางาน), 
-            total_late_count (จำนวนครั้งที่มาสาย), 
-            total_late_hours (ชั่วโมงที่มาสาย)
+    เครื่องมือนี้เกี่ยวกับข้อมูลการเช็คอินหรือการเข้างานของทั้งปี
     """
 
     try:
@@ -113,30 +99,26 @@ async def late_summary_by_group_year(group: str, year: str):
             SELECT 
                 employee_group,
                 employee_name,
-                SUM(work_hours) AS total_work_hours,
-                SUM(leave_hours) AS total_leave_hours,
-                SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS total_late_count,
-                SUM(late_hours) AS total_late_hours
+                SUM(work_hours) AS ชั่วโมงการทำงาน,
+                SUM(late_hours) AS ชั่วโมงรวมที่มาสาย,
+                SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS จำนวนครั้งที่มาสาย,
+                SUM(leave_hours) AS ชั่วโมงที่ลางาน
             FROM 
                 {year}
             WHERE 
                 employee_group = %s
             GROUP BY 
-                employee_team,
                 employee_group,
-                employee_id,
                 employee_name
             ORDER BY 
-                employee_team,
                 employee_group,
-                total_late_count DESC
+                ชั่วโมงรวมที่มาสาย DESC
         """
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, (group,))
         results = cursor.fetchall()
-        print(results)
         cursor.close()
         conn.close()
 
@@ -151,22 +133,7 @@ async def late_summary_by_group_year(group: str, year: str):
 @mcp.tool("sick_count_year")
 async def sick_count_year(group: str, year: str):
     """
-    (เครื่องมือนี้เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ของทั้งปี)
-    Tool that give Take leave data from database(MySQL) by filtering by employee group. and summary by year
-
-    args:
-        group (str): Name of group such as "Back Office"
-        year (str): Must be "employee_2023" or "employee_2024"
-
-    result:
-        str: JSON string including:
-            employee_group, 
-            employee_name, 
-            Annual_Day (จำนวนวันลาพักผ่อน), 
-            Sick_Day (จำนวนวันลาป่วย), 
-            Errand_Day (จำนวนวันลากิจ), 
-            total_take_leave_day (จำนวนวันลาทั้งหมด)
-    
+    เครื่องมือนี้เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ของทั้งปี    
     """
 
     try:
@@ -179,14 +146,14 @@ async def sick_count_year(group: str, year: str):
             SELECT 
                 employee_name,
                 employee_group,
-                SUM(CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END) AS Annual_Day,
-                SUM(CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END) AS Sick_Day,
-                SUM(CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END) AS Errand_Day,
+                SUM(CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END) AS จำนวนวันที่ลาพักผ่อน,
+                SUM(CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END) AS จำนวนวันที่ลาป่วย,
+                SUM(CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END) AS จำนวนวันที่ลากิจ,
                 SUM(
                     CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END +
                     CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END +
                     CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END
-                ) AS total_take_leave_day
+                ) AS จำนวนวันที่ลาทั้งหมด
             FROM 
                 {year}
             WHERE 
@@ -196,8 +163,7 @@ async def sick_count_year(group: str, year: str):
                 employee_name,
                 employee_group
             ORDER BY 
-                employee_name;
-
+                employee_group;
         """ 
 
         conn = get_db_connection()
@@ -221,23 +187,13 @@ async def sick_count_year(group: str, year: str):
 @mcp.tool("late_summary_by_date")
 async def late_summary_by_date(group: str, year: str,start_date: str,end_date: str): 
     """
-    (เครื่องมือนี้เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ในช่วงเวลาที่กำหนด)
-    Tool that give check-in data from database(MySQL) by filtering by employee group. and summary by date
+    เครื่องมือนี้เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ตามช่วงเวลาที่กำหนด
 
     args:
         group (str): Name of group such as "Back Office"
         year (str): Must be "employee_2023" or "employee_2024"
         start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
         end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
-
-    result:
-        str: JSON string including:
-            employee_group, 
-            employee_name, 
-            total_work_hours (ชั่วโมงการทำงาน), 
-            total_leave_hours (ชั่วโมงที่ลางาน), 
-            total_late_count (จำนวนครั้งที่มาสาย), 
-            total_leave_hours (ชั่วโมงที่มาสาย)
     """
 
     try:
@@ -250,28 +206,30 @@ async def late_summary_by_date(group: str, year: str,start_date: str,end_date: s
             SELECT 
                 employee_group,
                 employee_name,
-                SUM(work_hours) AS total_work_hours,
-                SUM(late_hours ) AS total_late_hours,
-                SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS total_late_count,
-                SUM(leave_hours) AS total_leave_hours
+                SUM(work_hours) AS ชั่วโมงการทำงาน,
+                SUM(late_hours) AS ชั่วโมงรวมที่มาสาย,
+                SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS จำนวนครั้งที่มาสาย,
+                SUM(leave_hours) AS ชั่วโมงที่ลางาน
             FROM 
                 {year}
             WHERE 
                 employee_group = %s
-                AND checkin_date BETWEEN '{start_date}' AND '{end_date}'
+                AND (
+                checkin_date BETWEEN '{start_date}' AND '{end_date}'
+                OR leave_hours > 0
+            )
             GROUP BY 
                 employee_group,
                 employee_name
             ORDER BY 
                 employee_group,
-                total_late_hours DESC;
+                ชั่วโมงรวมที่มาสาย DESC;
         """
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, (group,))
         results = cursor.fetchall()
-        print(results)
         cursor.close()
         conn.close()
 
@@ -285,27 +243,17 @@ async def late_summary_by_date(group: str, year: str,start_date: str,end_date: s
 @mcp.tool("sick_summary_by_date")
 async def sick_summary_by_date(group: str, year: str,start_date: str,end_date: str): 
     """
-    (เครื่องมือนี้เกี่ยวกับข้อมูลการเช็คอินหรือเข้างานของ ช่วงเวลาที่กำหนด)
-    Tool that give check-in data from database(MySQL) by filtering by employee group. and summary by date
+    เครื่องมือนี้เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ตามช่วงเวลาที่กำหนด
 
     args:
         group (str): Name of group such as "Back Office"
         year (str): Must be "employee_2023" or "employee_2024"
         start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
         end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
-
-    result:
-        str: JSON string including:
-            employee_group, 
-            employee_name, 
-            Annual_Day (จำนวนวันลาพักผ่อน), 
-            Sick_Day (จำนวนวันลาป่วย), 
-            Errand_Day (จำนวนวันลากิจ), 
-            total_take_leave_day (จำนวนวันลาทั้งหมด)
     """
 
     try:
-        logger.info(f"LLM is trying to use late_summary_by_date and choose group: {group} and year: {year} and date: {start_date} to {end_date}")
+        logger.info(f"LLM is trying to use sick_summary_by_date and choose group: {group} and year: {year} and date: {start_date} to {end_date}")
 
         if year not in ["employee_2023", "employee_2024"]:
             raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
@@ -314,32 +262,34 @@ async def sick_summary_by_date(group: str, year: str,start_date: str,end_date: s
            SELECT 
                 employee_name,
                 employee_group,
-                SUM(CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END) AS Annual_Day,
-                SUM(CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END) AS Sick_Day,
-                SUM(CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END) AS Errand_Day,
+                SUM(CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END) AS จำนวนวันที่ลาพักผ่อน,
+                SUM(CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END) AS จำนวนวันที่ลาป่วย,
+                SUM(CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END) AS จำนวนวันที่ลากิจ,
                 SUM(
                     CASE WHEN work_record LIKE '%Annual Leave%' THEN 1 ELSE 0 END +
                     CASE WHEN work_record LIKE '%Sick Leave%' THEN 1 ELSE 0 END +
                     CASE WHEN work_record LIKE '%Errand Leave%' THEN 1 ELSE 0 END
-                ) AS total_take_leave_day
+                ) AS จำนวนวันที่ลาทั้งหมด
             FROM 
                 {year}
             WHERE 
                 employee_group = %s
-                AND checkin_date BETWEEN '{start_date}' AND '{end_date}'
+                AND (
+                checkin_date BETWEEN '{start_date}' AND '{end_date}'
+                OR leave_hours > 0
+            )
             GROUP BY 
                 employee_group,
                 employee_name
             ORDER BY 
                 employee_group,
-                total_take_leave_day
+                จำนวนวันที่ลาทั้งหมด
         """
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, (group,))
         results = cursor.fetchall()
-        print(results)
         cursor.close()
         conn.close()
 
@@ -351,31 +301,7 @@ async def sick_summary_by_date(group: str, year: str,start_date: str,end_date: s
 
 #############################################################################################################
 
-#########################################################################
-# @mcp.tool("list_available_tools")
-# async def list_available_tools():
-#     """List all tools available in this MCP server."""
-#     tools = [
-#         {
-#             "name": "execute_select_or_show",
-#             "description": "Execute only SELECT or SHOW queries."
-#         },
-#         {
-#             "name": "employee_late_summary_by_group_year",
-#             "description": "Employee check-in summary data"  
-#         },
-#         {
-#             "name": "employee_sick_count_year",
-#             "description": "Employee Take leave summary data"
-#         }
-#     ]
-    
-#     return {"result": json.dumps({"tools": tools})}
-#########################################################################
-
-
 if __name__ == "__main__":
-    print("\n--- Starting FastMCP Server via __main__ ---")
     mcp.run()
 
     #fastmcp run mcp_server.py:mcp --transport sse --port 8080 --host 0.0.0.0
