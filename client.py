@@ -44,14 +44,12 @@ async def chat(chatmessage: RequestMessage):
     
     for chat in chatmessage.messages:
         if chat.role == 'ai':
-            messages.append({"role": "assistant", "content": chat.content})
+            messages.append(AIMessage(content=chat.content))
         elif chat.role == 'human':
             messages.append(HumanMessage(content=chat.content))
         elif chat.role == 'system':
             messages.append({"role": "system", "content": chat.content})
     
-    # print(messages)
-
     async with MultiServerMCPClient(
         {
             "db": {
@@ -74,10 +72,17 @@ async def chat(chatmessage: RequestMessage):
 @app.post("/create-check-in-report", response_model=AgentResponse)
 async def create_report(request: RequestMessage):
     messages = []
+
+    # for msg in request.messages:
+    #     if msg.role == 'human':
+    #         messages = msg.content
+    #         break
+
     for msg in request.messages:
         if msg.role == 'human':
-            messages = msg.content
-            break
+            messages.append(HumanMessage(content=msg.content))
+        elif msg.role == 'ai':
+            messages.append(AIMessage(content=msg.content))
         
     async with MultiServerMCPClient(
         {
@@ -89,7 +94,7 @@ async def create_report(request: RequestMessage):
     ) as client:
         # print("MCP SERVER IS CONNECTED")
         agent = react_agent(llm, client.get_tools(), "async")
-        result = await agent.ainvoke({"messages": [HumanMessage(content=messages)],"recursion_limit": 15})
+        result = await agent.ainvoke({"messages": messages, "recursion_limit": 15})
         
         plann = result.get("report_plan","Noting was generated.")
         queryy = result.get("report_query","Noting was generated.")

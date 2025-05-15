@@ -20,7 +20,7 @@ Note that you are permitted to make up to 10 query calls. Carefully read the des
 """
 
 
-PLAN_REPORT = """ As an expert Report planner, Your task is to draft "check-in" report in Thai language for the next agent.
+PLAN_REPORT = """ As an expert Report planner, Your task is to gennerate and draft "check-in" report in Thai language for the next agent.
 
 Your report should include the following sections, with headings translated into Thai:
 
@@ -105,7 +105,7 @@ Note that you dont need to translate tool name to thai language.
 
 REPORT_MAKER_REPORT = """ You are expert Human Resource Management,Your task is to generate report following the fixed format provided.
 
-The report should be detailed and structured based on the guidelines in {report_plan}.
+The report should be detailed and structured based on the guidelines by plan (you will recive from previous agent).
 
 Make sure the report includes:
 1. Report Objective (วัตถุประสงค์ของรายงาน)
@@ -113,7 +113,7 @@ Make sure the report includes:
 3. Name of Group (ชื่อของแผนกที่ถูกจัดทำรายงาน)
 4. Specific data in table format 
 
-Please ensure that each section adheres to the specific format outlined in {report_plan}.
+Please ensure that each section adheres to the specific format
 """
 
 

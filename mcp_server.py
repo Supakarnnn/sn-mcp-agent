@@ -74,7 +74,7 @@ async def execute_select_or_show(query: str):
         columns = [desc[0] for desc in cursor.description] if cursor.description else []
         conn.close()
         
-        return json.dumps({"columns": columns,"rows": results},ensure_ascii=False)
+        return json.dumps({"columns": columns,"rows": results},ensure_ascii=False, cls=DecimalEncoder)
     
     except Error as e:
         logger.error(f"Error executing query: {e}")
