@@ -1,12 +1,15 @@
 "use client";
 import React, { useState } from "react";
 import styles from "./page.module.css";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from 'remark-gfm';
 
 export default function Home() {
+  // Use string-based apiMode for scalability
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [useAltAPI, setUseAltAPI] = useState(false);
+  const [apiMode, setApiMode] = useState("chat"); // chat | report | sickReport
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -17,9 +20,13 @@ export default function Home() {
     setInput("");
     setLoading(true);
 
-    const apiURL = useAltAPI
-      ? "http://localhost:8001/create-report"
-      : "http://localhost:8001/chat";
+    // Decide API URL based on mode
+    const apiURL =
+      apiMode === "report"
+        ? "http://localhost:8001/create-check-in-report"
+        : apiMode === "sickReport"
+        ? "http://localhost:8001/create-take-leave-report"
+        : "http://localhost:8001/chat";
 
     try {
       const response = await fetch(apiURL, {
@@ -34,7 +41,12 @@ export default function Home() {
       const aiMessage = {
         role: "ai",
         content: data.response,
-        source: useAltAPI ? "Tool" : "AI 1",
+        source:
+          apiMode === "report"
+            ? "Tool - Report"
+            : apiMode === "sickReport"
+            ? "Tool - Sick Report"
+            : "AI 1",
       };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
@@ -56,9 +68,11 @@ export default function Home() {
                   msg.role === "human" ? styles.user : styles.ai
                 }`}
               >
-                <div>{msg.content}</div>
+                <div>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                </div>
                 {msg.role === "ai" && msg.source && (
-                  <span className={styles.sourceTag}>{msg.source}</span> //#########################
+                  <span className={styles.sourceTag}>{msg.source}</span>
                 )}
               </div>
             ))}
@@ -69,25 +83,27 @@ export default function Home() {
           <div className={styles.toolBar}>
             <button
               className={`${styles.pillButton} ${
-                !useAltAPI ? styles.activePill : ""
+                apiMode === "chat" ? styles.activePill : ""
               }`}
-              onClick={() => {
-                setUseAltAPI(false);
-                // console.log("1");
-              }}
+              onClick={() => setApiMode("chat")}
             >
               CHAT
             </button>
             <button
               className={`${styles.pillButton} ${
-                useAltAPI ? styles.activePill : ""
+                apiMode === "report" ? styles.activePill : ""
               }`}
-              onClick={() => {
-                setUseAltAPI(true);
-                // console.log("2");
-              }}
+              onClick={() => setApiMode("report")}
             >
               CREATE REPORT
+            </button>
+            <button
+              className={`${styles.pillButton} ${
+                apiMode === "sickReport" ? styles.activePill : ""
+              }`}
+              onClick={() => setApiMode("sickReport")}
+            >
+              CREATE SICK REPORT
             </button>
             <button className={styles.resetButton} onClick={() => setMessages([])}>
               🗑️ Reset Chat

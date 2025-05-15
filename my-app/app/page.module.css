@@ -9,8 +9,8 @@
 .chatbox {
   background: white;
   width: 100%;
-  max-width: 800px;
-  height: 700px;
+  max-width: 1300px;
+  height: 800px;
   display: flex;
   flex-direction: column;
   border-radius: 16px;
@@ -28,7 +28,7 @@
 }
 
 .message {
-  max-width: 70%;
+  max-width: 60%;
   padding: 1rem 1.25rem;
   border-radius: 20px;
   font-size: 1rem;
