@@ -1,6 +1,6 @@
-langgraph
-langchain
-langchain-community
+langgraph==0.3.34
+langchain==0.3.24
+langchain-community==0.3.22
 fastapi
-langchain-openai
-langchain-mcp-adapters
+langchain-openai==0.3.14
+langchain-mcp-adapters==0.0.9

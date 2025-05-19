@@ -12,7 +12,6 @@ from langgraph.prebuilt import create_react_agent
 from agent.graph import react_agent,react_sick_agent
 import asyncio
 from agent.react import p_react_agent
-from IPython.display import Image, display
 from langchain_core.runnables.graph import CurveStyle, MermaidDrawMethod, NodeStyles
 
 # Load environment variables
@@ -24,7 +23,6 @@ app = FastAPI(title="AI Assistant")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -67,16 +65,9 @@ async def chat(chatmessage: RequestMessage):
             "full_messages": result["messages"]
         }
         
-
-
 @app.post("/create-check-in-report", response_model=AgentResponse)
 async def create_report(request: RequestMessage):
     messages = []
-
-    # for msg in request.messages:
-    #     if msg.role == 'human':
-    #         messages = msg.content
-    #         break
 
     for msg in request.messages:
         if msg.role == 'human':
@@ -149,6 +140,7 @@ async def create_sick_report(request: RequestMessage):
 
 @app.get("/")
 async def health_check():
+
     return {"status": "healthy"}
 
 if __name__ == "__main__":
