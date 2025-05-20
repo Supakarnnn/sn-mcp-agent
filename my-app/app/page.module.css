@@ -132,6 +132,18 @@
   transition: all 0.2s ease;
 }
 
+.resetCsvButton {
+  margin-left: 410px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid #ef4444;
+  background-color: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
 .resetButton:hover {
   background-color: #fee2e2;
 }
@@ -155,4 +167,34 @@
 .avatar {
   font-size: 1.5rem;
   margin-top: 2px;
+}
+
+.uploadButton {
+  margin-right: 0px;
+}
+
+.csvStatus {
+  margin-right: 10px;
+  font-weight: bold;
+  color: green;
+}
+
+.uploadLabel {
+  display: inline-block;
+  background-color: #0070f3;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 10px;
+  font-weight: bold;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.uploadLabel:hover {
+  background-color: #005bb5;
+}
+
+.uploadHiddenInput {
+  display: none;
 }

@@ -28,6 +28,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [apiMode, setApiMode] = useState("chat"); // chat | report | sickReport
   const [selectedMessageIndex, setSelectedMessageIndex] = useState(null);
+  
 
   // Refs
   const markdownRef = useRef(null);

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import styles from "./page.module.css";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -21,6 +21,86 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [apiMode, setApiMode] = useState("chat");
+  const [csvUploaded, setCsvUploaded] = useState(false);
+  const [csvFileName, setCsvFileName] = useState("");
+
+  const fileInputRef = useRef(null);
+
+  const handleUploadCsv = async (event) => {
+    const file = event.target.files[0];
+    if (!file || !file.name.endsWith(".csv")) {
+      alert("Please upload a valid CSV file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://localhost:8001/upload-csv", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.message) {
+        setCsvUploaded(true);
+        setCsvFileName(file.name);
+
+        const uploadMessage = {
+          role: "human",
+          content: `📄 Uploaded CSV file: **${file.name}**`
+        };
+
+        setMessages((prev) => [...prev, uploadMessage]);
+      } else {
+        alert("Upload failed.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Upload error.");
+    } finally {
+      // รีเซ็ต input เพื่อให้สามารถอัปโหลดไฟล์เดิมได้
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const resetCsv = async () => {
+    try {
+      await fetch("http://localhost:8001/reset-csv", { method: "DELETE" });
+      setCsvUploaded(false);
+      setCsvFileName("");
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "human",
+          content: "❌ CSV has been reset."
+        }
+      ]);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reset CSV.");
+    }
+  };
+
+  const resetAll = async () => {
+    setMessages([]);
+    try {
+      await fetch("http://localhost:8001/reset-csv", { method: "DELETE" });
+      setCsvUploaded(false);
+      setCsvFileName("");
+
+      setMessages((prev) => [
+        ...prev,
+      ]);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reset CSV.");
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -79,12 +159,9 @@ export default function Home() {
                   const jsonMatch = msg.content.match(/\{[\s\S]*\}/);
                   if (jsonMatch) {
                     const parsed = JSON.parse(jsonMatch[0]);
-
                     if (parsed.labels && parsed.datasets) {
-                      // แบบไม่มีชื่อ (ใช้ default key)
                       chartObjects.push({ key: "Chart", chart: parsed });
                     } else {
-                      // แบบมีหลาย chart ระบุชื่อไว้
                       for (const [key, chart] of Object.entries(parsed)) {
                         if (chart.labels && chart.datasets) {
                           chartObjects.push({ key, chart });
@@ -100,8 +177,7 @@ export default function Home() {
               return (
                 <div
                   key={idx}
-                  className={`${styles.message} ${msg.role === "human" ? styles.user : styles.ai
-                    }`}
+                  className={`${styles.message} ${msg.role === "human" ? styles.user : styles.ai}`}
                 >
                   <div>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -136,31 +212,49 @@ export default function Home() {
           </div>
 
           <div className={styles.toolBar}>
+            {/* Upload CSV */}
+            <label className={styles.pillButton}>
+              📤 Upload CSV
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleUploadCsv}
+                className={styles.uploadHiddenInput}
+                ref={fileInputRef}
+              />
+            </label>
+
+            {/* API Mode */}
             <button
-              className={`${styles.pillButton} ${apiMode === "chat" ? styles.activePill : ""
-                }`}
+              className={`${styles.pillButton} ${apiMode === "chat" ? styles.activePill : ""}`}
               onClick={() => setApiMode("chat")}
             >
               CHAT
             </button>
             <button
-              className={`${styles.pillButton} ${apiMode === "report" ? styles.activePill : ""
-                }`}
+              className={`${styles.pillButton} ${apiMode === "report" ? styles.activePill : ""}`}
               onClick={() => setApiMode("report")}
             >
               CREATE REPORT
             </button>
             <button
-              className={`${styles.pillButton} ${apiMode === "sickReport" ? styles.activePill : ""
-                }`}
+              className={`${styles.pillButton} ${apiMode === "sickReport" ? styles.activePill : ""}`}
               onClick={() => setApiMode("sickReport")}
             >
               CREATE SICK REPORT
             </button>
+
+            {/* Reset CSV */}
             <button
-              className={styles.resetButton}
-              onClick={() => setMessages([])}
+              className={styles.resetCsvButton}
+              onClick={resetCsv}
+              disabled={!csvUploaded}
             >
+              🧹 Reset CSV
+            </button>
+
+            {/* Reset Chat */}
+            <button className={styles.resetButton} onClick={resetAll}>
               🗑️ Reset Chat
             </button>
           </div>
@@ -174,11 +268,7 @@ export default function Home() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
             />
-            <button
-              className={styles.sendButton}
-              onClick={handleSend}
-              disabled={loading}
-            >
+            <button className={styles.sendButton} onClick={handleSend} disabled={loading}>
               Send
             </button>
           </div>
