@@ -1,18 +1,18 @@
 import os
+import io
+import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi import UploadFile, File, APIRouter, Form
+from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage,AIMessage,SystemMessage
 from langchain_openai import ChatOpenAI
 from model.module import RequestMessage, AgentResponse
 from prompt.p import DATABASE_ADMIN
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from typing import Dict, Any
-from langgraph.prebuilt import create_react_agent
 from agent.graph import react_agent,react_sick_agent
-import asyncio
 from agent.react import p_react_agent
-from langchain_core.runnables.graph import CurveStyle, MermaidDrawMethod, NodeStyles
 
 # Load environment variables
 load_dotenv()
@@ -36,6 +36,27 @@ llm = ChatOpenAI(
     # max_completion_tokens=4096
 )
 
+CSV_TEXT = None
+@app.post("/upload-csv")
+async def upload_csv(file: UploadFile = File(...)):
+    global CSV_TEXT
+
+    if not file.filename.endswith(".csv"):
+        return {"error": "Only CSV files are supported."}
+
+    contents = await file.read()
+    df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
+    
+    CSV_TEXT = df.to_csv(index=False)
+    
+    return {"message": "CSV uploaded and ready for chat."}
+
+@app.delete("/reset-csv")
+async def reset_csv():
+    global CSV_TEXT
+    CSV_TEXT = None
+    return {"message": "CSV data has been reset."}
+
 @app.post("/chat")
 async def chat(chatmessage: RequestMessage):
     messages = []
@@ -55,7 +76,12 @@ async def chat(chatmessage: RequestMessage):
                 "transport": "sse",
             }
         }
-    ) as client:    
+    ) as client:
+        
+        global CSV_TEXT
+        if CSV_TEXT:
+            messages.insert(0, HumanMessage(content=f"นี่คือข้อมูล CSV ที่อัปโหลด:\n\n{CSV_TEXT}"))
+
         agent = p_react_agent(llm, client.get_tools(),DATABASE_ADMIN)
         result = await agent.ainvoke({"messages": messages})   
         final_result = result["messages"][-1].content

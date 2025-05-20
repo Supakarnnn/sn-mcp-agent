@@ -4,3 +4,5 @@ langchain-community==0.3.22
 fastapi
 langchain-openai==0.3.14
 langchain-mcp-adapters==0.0.9
+fastmcp===2.2.2
+python-multipart

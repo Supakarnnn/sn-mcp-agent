@@ -2,7 +2,8 @@ import os
 from fastmcp import FastMCP
 from dotenv import load_dotenv
 import logging
-import asyncio
+import pandas as pd
+import io
 import json
 from mcp.types import Resource, Tool, TextContent
 from mysql.connector import connect, Error
@@ -98,6 +99,37 @@ async def get_visualization_object(m: str):
     results = res.content
     return json.dumps(results,ensure_ascii=False, cls=DecimalEncoder)
 
+
+@mcp.tool("load_csv_to_mysql")
+async def load_csv_to_mysql(table_name: str, csv_text: str):
+    """
+    นำข้อมูล csv เข้า database(MySQL)
+
+    args:
+        table_name (str): Must be "test123" 
+    
+    """
+    try:
+        logger.info(f"LLM is trying to use load_csv_to_mysql and handle with table: {table_name}")
+        df = pd.read_csv(io.StringIO(csv_text))
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        columns = ",".join(df.columns)
+        placeholders = ",".join(["%s"] * len(df.columns))
+        sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+
+        for _, row in df.iterrows():
+            cursor.execute(sql, tuple(row))
+
+        conn.commit()
+        conn.close()
+        
+        return f"✅ อัปโหลด ข้อมูลเข้าสู่ตาราง {table_name} แล้วเรียบร้อย"
+    
+    except Error as e:
+        logger.error(f"Error executing query: {e}")
+        return {"result": json.dumps({"error": str(e)}), "status": "error"}
 #YEAR
 ####################################################################################################################################
 @mcp.tool("check_in_data_year")
