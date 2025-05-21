@@ -28,9 +28,9 @@ def p_react_agent(llm : ChatOpenAI , tools : list, system_prompt : str | None = 
             content_from_Tool+=msg.content + "\n\n"
         HumaHuman = HumanMessage(content=content_from_Tool)
                     
-        print("---------------------------------------------------------------------------")
-        print(HumaHuman)
-        print("---------------------------------------------------------------------------")
+        # print("---------------------------------------------------------------------------")
+        # print(HumaHuman)
+        # print("---------------------------------------------------------------------------")
         return {"messages": state["messages"]+ messages + [HumaHuman]}
 
     def should_continue(state: ReactState) -> Literal["tools", "__end__"]:
@@ -42,7 +42,7 @@ def p_react_agent(llm : ChatOpenAI , tools : list, system_prompt : str | None = 
 
     async def call_model(state: ReactState):
         messages = state["messages"]
-        print(messages)
+        # print(messages)
         if system_prompt: 
             message = await model_with_tools.ainvoke([SystemMessage(content=system_prompt) , *messages]) 
         else:

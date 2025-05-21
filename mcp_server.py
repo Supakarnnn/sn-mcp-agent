@@ -52,7 +52,6 @@ def get_db_connection():
         logger.error(f"{e}")
         raise Exception(f"{str(e)}")
 
-
 @mcp.tool("execute_select_or_show")
 async def execute_select_or_show(query: str):
     """
@@ -99,18 +98,20 @@ async def get_visualization_object(m: str):
     results = res.content
     return json.dumps(results,ensure_ascii=False, cls=DecimalEncoder)
 
-
 @mcp.tool("load_csv_to_mysql")
 async def load_csv_to_mysql(table_name: str, csv_text: str):
     """
-    นำข้อมูล csv เข้า database(MySQL)
+    - นำข้อมูล csv เข้า database(MySQL)
+    - ข้อมูลจะมาจาก CSV ปัจจุบันที่ผู้ใช้อัปโหลด
+    - ตรวจสอบให้แน่ใจว่า csv_text ถูกส่งเป็นเนื้อหา CSV แบบเต็ม
+    - เครื่องมือนี้เขียนได้อย่างเดียว ไม่ส่งคืนข้อมูลที่แทรกเข้าไป
 
     args:
         table_name (str): Must be "test123" 
     
     """
     try:
-        logger.info(f"LLM is trying to use load_csv_to_mysql and handle with table: {table_name}")
+        logger.info(f"LLM is trying to use load_csv_to_mysql and handle with table: {table_name} and {csv_text}")
         df = pd.read_csv(io.StringIO(csv_text))
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -130,6 +131,7 @@ async def load_csv_to_mysql(table_name: str, csv_text: str):
     except Error as e:
         logger.error(f"Error executing query: {e}")
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
+    
 #YEAR
 ####################################################################################################################################
 @mcp.tool("check_in_data_year")
