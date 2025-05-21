@@ -396,6 +396,22 @@
   background: #262626;
 }
 
+.uploadHiddenInput {
+  display: none;
+}
+
+.resetCsvButton {
+  margin-left: 310px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid #ef4444;
+  background-color: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .chatbox {

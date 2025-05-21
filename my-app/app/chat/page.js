@@ -28,11 +28,14 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [apiMode, setApiMode] = useState("chat"); // chat | report | sickReport
   const [selectedMessageIndex, setSelectedMessageIndex] = useState(null);
+  const [csvUploaded, setCsvUploaded] = useState(false);
+  const [csvFileName, setCsvFileName] = useState("");
   
 
   // Refs
   const markdownRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -40,6 +43,82 @@ export default function Home() {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, loading]);
+
+  const handleUploadCsv = async (event) => {
+    const file = event.target.files[0];
+    if (!file || !file.name.endsWith(".csv")) {
+      alert("Please upload a valid CSV file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://localhost:8001/upload-csv", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.message) {
+        setCsvUploaded(true);
+        setCsvFileName(file.name);
+
+        const uploadMessage = {
+          role: "human",
+          content: `📄 Uploaded CSV file: **${file.name}**`
+        };
+
+        setMessages((prev) => [...prev, uploadMessage]);
+      } else {
+        alert("Upload failed.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Upload error.");
+    } finally {
+      // รีเซ็ต input เพื่อให้สามารถอัปโหลดไฟล์เดิมได้
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const resetCsv = async () => {
+    try {
+      await fetch("http://localhost:8001/reset-csv", { method: "DELETE" });
+      setCsvUploaded(false);
+      setCsvFileName("");
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "human",
+          content: "❌ CSV has been reset."
+        }
+      ]);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reset CSV.");
+    }
+  };
+
+  const resetAll = async () => {
+    setMessages([]);
+    try {
+      await fetch("http://localhost:8001/reset-csv", { method: "DELETE" });
+      setCsvUploaded(false);
+      setCsvFileName("");
+
+      setMessages((prev) => [
+        ...prev,
+      ]);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reset CSV.");
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -396,6 +475,16 @@ export default function Home() {
 
           {/* Pill-style toggle buttons */}
           <div className={styles.toolBar}>
+            <label className={styles.pillButton}>
+              📤 Upload CSV
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleUploadCsv}
+                className={styles.uploadHiddenInput}
+                ref={fileInputRef}
+              />
+            </label>
             <button
               className={`${styles.pillButton} ${apiMode === "chat" ? styles.activePill : ""
                 }`}
@@ -416,6 +505,13 @@ export default function Home() {
               onClick={() => setApiMode("sickReport")}
             >
               CREATE SICK REPORT
+            </button>
+            <button
+              className={styles.resetCsvButton}
+              onClick={resetCsv}
+              disabled={!csvUploaded}
+            >
+              🧹 Reset CSV
             </button>
             <button
               className={styles.resetButton}
