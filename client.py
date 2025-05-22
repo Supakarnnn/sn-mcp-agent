@@ -2,11 +2,12 @@ import os
 import io
 import time
 import uuid
+import json
 import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi import UploadFile, File, APIRouter, Form
-from typing import List, Optional
+from mysql.connector import connect, Error
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage,AIMessage,SystemMessage
 from langchain_openai import ChatOpenAI
@@ -30,57 +31,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+DB_CONFIG = {
+    "host": os.environ.get("MYSQL_HOST_NW"),
+    "user": os.environ.get("MYSQL_USER_NW"),
+    "password": os.environ.get("MYSQL_PASSWORD_NW"),
+    "database": os.environ.get("MYSQL_DATABASE_NW"),
+    "port": 6033
+}
+
+def get_db_connection():
+    try:
+        return connect(**DB_CONFIG)
+    except Error as e:
+        raise Exception(f"{str(e)}")
+
 llm = ChatOpenAI(
     base_url=os.environ.get("BASE_URL"),
     model='gpt-4o-mini',
     api_key=os.environ["OPENAI_API_KEY"],
     temperature=0,
     top_p=0
-    # max_completion_tokens=4096
 )
 
 df_global = None
 
-@tool
-def query_csv_tool(command: str) -> str:
-    """
-    Tool สำหรับให้ AI ใช้ query ข้อมูล CSV ที่โหลดไว้ใน Pandas DataFrame ชื่อ df_global
-    """
-    global df_global
-
-    if df_global is None:
-        return "ยังไม่มีไฟล์ CSV ถูกอัปโหลด"
-
-    try:
-        df = df_global
-        print(command)
-        result = eval(command)
-        if isinstance(result, pd.DataFrame) or isinstance(result, pd.Series):
-            return result.to_string()
-        return str(result)
-    except Exception as e:
-        return f"เกิดข้อผิดพลาด: {str(e)}"
-    
-
-@app.post("/upload-csv")
-async def upload_csv(file: UploadFile = File(...)):
-    global df_global
-    if not file.filename.endswith(".csv"):
-        return {"error": "Only CSV files are supported."}
-
+@app.post("/preview-csv")
+async def preview_csv(file: UploadFile = File(...)):
     contents = await file.read()
     df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
     df = df.drop([
-    'กะทำงาน / ช่วงวันที่\nเข้างาน วันที่',
-    'กะทำงาน / ช่วงวันที่\nเข้างาน เวลา ',
-    'กะทำงาน / ช่วงวันที่\nออกงาน วันที่',
-    'กะทำงาน / ช่วงวันที่\nออกงาน เวลา ',
-    'เข้างานด้วยสถานที่',
-    'ออกงานด้วยสถานที่',
-    'Onsite',
-    'ปรับเวลา',
-    'ไม่เข้า-ออกงาน',
-    'อีเมล',
+        'กะทำงาน / ช่วงวันที่\nเข้างาน วันที่',
+        'กะทำงาน / ช่วงวันที่\nเข้างาน เวลา ',
+        'กะทำงาน / ช่วงวันที่\nออกงาน วันที่',
+        'กะทำงาน / ช่วงวันที่\nออกงาน เวลา ',
+        'เข้างานด้วยสถานที่',
+        'ออกงานด้วยสถานที่',
+        'Onsite',
+        'ปรับเวลา',
+        'ไม่เข้า-ออกงาน',
+        'อีเมล',
     ], axis=1)
 
     df = df.rename(columns={
@@ -98,27 +87,103 @@ async def upload_csv(file: UploadFile = File(...)):
         'สาย\n(HH.MM)': 'late_hours',
         'ล่วงเวลา\n(HH.MM)': 'overtime_hours',
         'ลางาน\n(HH.MM)': 'leave_hours',
-        'บันทึกการทำงาน' : 'work_record',
+        'บันทึกการทำงาน': 'work_record',
         'สาย/ครั้ง': 'late_count'
-        })
-
+    })
     date_cols = ['checkin_date', 'checkout_date']
-
     for col in date_cols:
         df[col] = pd.to_datetime(df[col], format='%d/%m/%Y', errors='coerce')
-
         df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) else '')
 
-    df_global = df
+    df = df.fillna('0')
+    preview = df.head(50).to_dict(orient="records")
+    return {"headers": df.columns.tolist(), "rows": preview}
 
-    return {"message": "CSV uploaded and ready for query."}
+@app.post("/upload-csv")
+async def upload_csv(file: UploadFile = File(...)):
+    contents = await file.read()
+    df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
+    df = df.drop([
+        'กะทำงาน / ช่วงวันที่\nเข้างาน วันที่',
+        'กะทำงาน / ช่วงวันที่\nเข้างาน เวลา ',
+        'กะทำงาน / ช่วงวันที่\nออกงาน วันที่',
+        'กะทำงาน / ช่วงวันที่\nออกงาน เวลา ',
+        'เข้างานด้วยสถานที่',
+        'ออกงานด้วยสถานที่',
+        'Onsite',
+        'ปรับเวลา',
+        'ไม่เข้า-ออกงาน',
+        'อีเมล',
+    ], axis=1)
 
+    df = df.rename(columns={
+        'รหัสพนักงาน': 'employee_id',
+        'ชื่อพนักงาน': 'employee_name',
+        'ตำแหน่ง': 'employee_position',
+        'กลุ่มผู้ใช้งาน': 'employee_group',
+        'ทีม': 'employee_team',
+        'เข้างาน\nวันที่': 'checkin_date',
+        'เข้างาน\nเวลา ': 'checkin_time',
+        'ออกงาน\nวันที่': 'checkout_date',
+        'ออกงาน\nเวลา ': 'checkout_time',
+        'กะทำงาน / ช่วงวันที่': 'work_range_date',
+        'ชั่วโมงการทำงาน\n(HH.MM)': 'work_hours',
+        'สาย\n(HH.MM)': 'late_hours',
+        'ล่วงเวลา\n(HH.MM)': 'overtime_hours',
+        'ลางาน\n(HH.MM)': 'leave_hours',
+        'บันทึกการทำงาน': 'work_record',
+        'สาย/ครั้ง': 'late_count'
+    })
+    date_cols = ['checkin_date', 'checkout_date']
+    for col in date_cols:
+        df[col] = pd.to_datetime(df[col], format='%d/%m/%Y', errors='coerce')
+        df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) else '')
 
-@app.delete("/reset-csv")
-async def reset_csv():
-    global CSV_TEXT
-    CSV_TEXT = None
-    return {"message": "CSV data has been reset."}
+    df = df.fillna('0')
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        for _, row in df.iterrows():
+            sql = """INSERT INTO test123 (
+                employee_id, employee_name, employee_position,
+                employee_group, employee_team,
+                checkin_date, checkin_time, checkout_date, checkout_time,
+                work_range_date, work_hours, late_hours, overtime_hours,
+                leave_hours, work_record, late_count
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+
+            values = (
+                int(row['employee_id']),
+                row['employee_name'],
+                row['employee_position'],
+                row['employee_group'],
+                row['employee_team'],
+                row['checkin_date'],
+                row['checkin_time'],
+                row['checkout_date'],
+                row['checkout_time'],
+                row['work_range_date'],
+                float(row['work_hours']),
+                float(row['late_hours']),
+                float(row['overtime_hours']),
+                float(row['leave_hours']),
+                row['work_record'],
+                int(row['late_count']),
+            )
+            cursor.execute(sql, values)
+
+        conn.commit()
+        return {"message": "✅ CSV data imported successfully."}
+
+    except Exception as e:
+        return {"error": str(e)}
+    
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.post("/chat")
 async def chat(chatmessage: RequestMessage):
@@ -141,7 +206,7 @@ async def chat(chatmessage: RequestMessage):
         }
     ) as client:
         
-        agent = p_react_agent(llm, [query_csv_tool] + client.get_tools(),DATA_ADMIN)
+        agent = p_react_agent(llm, client.get_tools(),DATA_ADMIN)
         result = await agent.ainvoke({"messages": messages})   
         final_result = result["messages"][-1].content
 
