@@ -37,7 +37,7 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:8001/upload-csv", {
+      const res = await fetch("http://localhost:8001/upload-chat-csv", {
         method: "POST",
         body: formData
       });
