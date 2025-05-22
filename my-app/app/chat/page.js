@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import styles from "./page.module.css";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,117 +17,183 @@ import {
   Legend
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
-import { renderToString } from 'react-dom/server';
+import Link from 'next/link';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Home() {
-  // State management
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [apiMode, setApiMode] = useState("chat"); // chat | report | sickReport
+  const [apiMode, setApiMode] = useState("chat");
+  const [hasSelectedMode, setHasSelectedMode] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [selectedMessageIndex, setSelectedMessageIndex] = useState(null);
-  const [csvUploaded, setCsvUploaded] = useState(false);
-  const [csvFileName, setCsvFileName] = useState("");
-  
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasNewMessage, setHasNewMessage] = useState(false);
+  const [typingText, setTypingText] = useState("");
+  const typingMessage = "AI is thinking...";
 
-  // Refs
   const markdownRef = useRef(null);
-  const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const messagesRef = useRef(null);
+  const inputRef = useRef(null);
+  const toolsButtonRef = useRef(null);
+  const toolsMenuRef = useRef(null);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, loading]);
+  const modeDisplayNames = {
+    chat: "Chat",
+    report: "Create Report",
+    sickReport: "Create Sick Report"
+  };
 
-  const handleUploadCsv = async (event) => {
-    const file = event.target.files[0];
-    if (!file || !file.name.endsWith(".csv")) {
-      alert("Please upload a valid CSV file.");
-      return;
-    }
+  const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  };
 
-    const formData = new FormData();
-    formData.append("file", file);
+  const checkIfAtBottom = useCallback(() => {
+    if (!messagesRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    setIsAtBottom(distanceFromBottom <= 50);
+  }, []);
 
-    try {
-      const res = await fetch("http://localhost:8001/upload-csv", {
-        method: "POST",
-        body: formData
+  const debouncedCheckIfAtBottom = useCallback(debounce(checkIfAtBottom, 100), [checkIfAtBottom]);
+
+  const scrollToBottom = useCallback(() => {
+    if (messagesRef.current) {
+      messagesRef.current.scrollTo({
+        top: messagesRef.current.scrollHeight,
+        behavior: "smooth"
       });
-
-      const data = await res.json();
-      if (data.message) {
-        setCsvUploaded(true);
-        setCsvFileName(file.name);
-
-        const uploadMessage = {
-          role: "human",
-          content: `📄 Uploaded CSV file: **${file.name}**`
-        };
-
-        setMessages((prev) => [...prev, uploadMessage]);
-      } else {
-        alert("Upload failed.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Upload error.");
-    } finally {
-      // รีเซ็ต input เพื่อให้สามารถอัปโหลดไฟล์เดิมได้
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      setIsAtBottom(true);
     }
-  };
+  }, []);
 
-  const resetCsv = async () => {
-    try {
-      await fetch("http://localhost:8001/reset-csv", { method: "DELETE" });
-      setCsvUploaded(false);
-      setCsvFileName("");
+  useEffect(() => {
+    const preventScroll = (e) => {
+      e.preventDefault();
+    };
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "human",
-          content: "❌ CSV has been reset."
+    document.body.style.overflow = "hidden";
+    document.body.style.height = "100vh";
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+
+    window.addEventListener("wheel", preventScroll, { passive: false });
+    window.addEventListener("touchmove", preventScroll, { passive: false });
+
+    return () => {
+      window.removeEventListener("wheel", preventScroll);
+      window.removeEventListener("touchmove", preventScroll);
+      document.body.style.overflow = "";
+      document.body.style.height = "";
+      document.body.style.margin = "";
+      document.body.style.padding = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    const messagesDiv = messagesRef.current;
+    if (!messagesDiv) return;
+
+    const handleScroll = () => {
+      debouncedCheckIfAtBottom();
+    };
+
+    messagesDiv.addEventListener("scroll", handleScroll);
+    return () => messagesDiv.removeEventListener("scroll", handleScroll);
+  }, [debouncedCheckIfAtBottom]);
+
+  useEffect(() => {
+    if ((isAtBottom || messages[messages.length - 1]?.role === "human") && messagesRef.current) {
+      scrollToBottom();
+    }
+    if (messages.length > 0) {
+      setHasNewMessage(true);
+      const timer = setTimeout(() => setHasNewMessage(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [messages, isAtBottom, scrollToBottom]);
+
+  useEffect(() => {
+    if (loading && isAtBottom && messagesRef.current) {
+      scrollToBottom();
+    }
+  }, [loading, isAtBottom, scrollToBottom]);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener("focus", () => {
+        window.scrollTo(0, 0);
+      });
+    }
+    return () => {
+      if (input) {
+        input.removeEventListener("focus", () => { });
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        toolsButtonRef.current &&
+        toolsMenuRef.current &&
+        !toolsButtonRef.current.contains(event.target) &&
+        !toolsMenuRef.current.contains(event.target)
+      ) {
+        setIsToolsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsToolsOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (loading) {
+      setTypingText("");
+      let index = 0;
+      const interval = setInterval(() => {
+        if (index < typingMessage.length) {
+          setTypingText((prev) => prev + typingMessage[index]);
+          index++;
+        } else {
+          setTypingText("");
+          index = 0;
         }
-      ]);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to reset CSV.");
+      }, 100);
+      return () => clearInterval(interval);
     }
-  };
-
+  }, [loading]);
   const resetAll = async () => {
     setMessages([]);
-    try {
-      await fetch("http://localhost:8001/reset-csv", { method: "DELETE" });
-      setCsvUploaded(false);
-      setCsvFileName("");
-
-      setMessages((prev) => [
-        ...prev,
-      ]);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to reset CSV.");
-    }
   };
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!input.trim()) return;
 
     const userMessage = { role: "human", content: input };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
+    setIsAtBottom(true);
 
     const apiURL =
       apiMode === "report"
@@ -140,11 +206,14 @@ export default function Home() {
       const response = await fetch(apiURL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages })
+        body: JSON.stringify({ messages: [...messages, userMessage] })
       });
 
+      if (!response.ok) {
+        throw new Error("API request failed.");
+      }
+
       const data = await response.json();
-      console.log("Calling API:", apiURL);
       const aiMessage = {
         role: "ai",
         content: data.response,
@@ -157,62 +226,48 @@ export default function Home() {
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+
+      if (apiMode === "report" || apiMode === "sickReport") {
+        console.log("Switching back to chat mode after report");
+        setApiMode("chat");
+        setHasSelectedMode(false);
+      }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("API Error:", error);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: "⚠️ Error: Could not connect to the server. Please try again." }
+      ]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [input, apiMode, messages]);
 
-  // Get markdown content from the selected AI response
-  const getSelectedMarkdownContent = () => {
-    // Filter for AI messages only
+  const getSelectedMarkdownContent = useCallback(() => {
     const aiMessages = messages.filter(msg => msg.role === "ai");
-
     if (aiMessages.length === 0) return null;
-
-    // If a message is selected, use it; otherwise, use the last message
     if (selectedMessageIndex !== null && selectedMessageIndex >= 0 && selectedMessageIndex < aiMessages.length) {
       return aiMessages[selectedMessageIndex].content;
     }
-
-    // Default to the last message if nothing is selected
     return aiMessages[aiMessages.length - 1].content;
-  };
+  }, [messages, selectedMessageIndex]);
 
-  // Get source info from the selected AI response
-  const getSelectedMessageSource = () => {
+  const getSelectedMessageSource = useCallback(() => {
     const aiMessages = messages.filter(msg => msg.role === "ai");
-
     if (aiMessages.length === 0) return "AI";
-
     if (selectedMessageIndex !== null && selectedMessageIndex >= 0 && selectedMessageIndex < aiMessages.length) {
       return aiMessages[selectedMessageIndex].source || "AI";
     }
-
     return aiMessages[aiMessages.length - 1].source || "AI";
-  };
+  }, [messages, selectedMessageIndex]);
 
-  // Function to render markdown preview for PDF conversion
-  const renderMarkdownPreview = () => {
+  const renderMarkdownPreview = useCallback(() => {
     const markdownContent = getSelectedMarkdownContent();
-
     if (!markdownContent) return null;
 
-    // Check if the content has tables and needs special formatting
-    const hasTable = markdownContent.includes('|') && markdownContent.includes('---');
-
-    // Get title based on selected message source
     const messageSource = getSelectedMessageSource();
-    let title;
-
-    if (messageSource === "Tool - Report") {
-      title = "Check-In Report";
-    } else if (messageSource === "Tool - Sick Report") {
-      title = "Sick Leave Report";
-    } else {
-      title = "Chat Response";
-    }
+    const title = messageSource === "Tool - Report" ? "Check-In Report" :
+      messageSource === "Tool - Sick Report" ? "Sick Leave Report" : "Chat Response";
 
     return (
       <div
@@ -220,10 +275,10 @@ export default function Home() {
         className={styles.markdownPdfPreview}
         style={{
           padding: '20px',
-          backgroundColor: 'white',
-          color: 'black',
+          backgroundColor: '#fefefe',
+          color: '#111827',
           fontFamily: 'Arial, sans-serif',
-          lineHeight: '1.6',
+          lineHeight: '1.7',
           fontSize: '12pt',
           maxWidth: '800px',
           margin: '0 auto',
@@ -232,99 +287,81 @@ export default function Home() {
           zIndex: -1000
         }}
       >
-        <h1 style={{ fontSize: '24pt', marginBottom: '10px' }}>
-          {title}
-        </h1>
+        <h1 style={{ fontSize: '24pt', marginBottom: '10px' }}>{title}</h1>
         <p style={{ fontSize: '9pt', color: '#666', marginBottom: '20px' }}>
           Generated: {new Date().toLocaleString()}
         </p>
         <div className={styles.markdownContent}>
-          <style dangerouslySetInnerHTML={{
-            __html: `
+          <style jsx>{`
             .markdown-table table {
               border-collapse: collapse;
               width: 100%;
               margin-bottom: 20px;
             }
             .markdown-table th {
-              background-color: #6200ee;
+              background-color: #059669;
               color: white;
-              padding: 8px;
+              padding: 10px;
               text-align: left;
-              border: 1px solid #ddd;
-              font-weight: bold;
+              border: 1px solid #374151;
+              font-weight: 600;
             }
             .markdown-table td {
-              padding: 8px;
-              border: 1px solid #ddd;
+              padding: 10px;
+              border: 1px solid #374151;
               vertical-align: top;
             }
             .markdown-table tr:nth-child(even) {
               background-color: #f2f2f2;
             }
-          `}} />
+          `}</style>
           <div className="markdown-table">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdownContent}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {markdownContent.replace(/\{[\s\S]*\}/, "").trim()}
+            </ReactMarkdown>
           </div>
         </div>
       </div>
     );
-  };
+  }, [getSelectedMarkdownContent, getSelectedMessageSource]);
 
-  // Enhanced function to convert HTML to PDF
-  const handleMarkdownToPDF = async () => {
+  const handleMarkdownToPDF = useCallback(async () => {
     const markdownContent = getSelectedMarkdownContent();
-
     if (!markdownContent) {
       alert("No AI response to convert to PDF!");
       return;
     }
 
-    // Indicate PDF generation is starting
     setLoading(true);
-
     try {
-      // Get the container element with the rendered markdown
       const element = markdownRef.current;
       if (!element) {
         throw new Error("Markdown preview element not found");
       }
 
-      // Make the element visible temporarily for capturing
       element.style.visibility = 'visible';
       element.style.position = 'fixed';
       element.style.top = '0';
       element.style.left = '0';
       element.style.zIndex = '-1000';
 
-      // Get title based on mode and selected message source
-      const messageSource = getSelectedMessageSource();
-      let title;
-
-      if (messageSource === "Tool - Report") {
-        title = "Check-In Report";
-      } else if (messageSource === "Tool - Sick Report") {
-        title = "Sick Leave Report";
-      } else {
-        title = "Chat Response";
-      }
-
-      // Use html2canvas to capture the rendered markdown with higher quality
       const canvas = await html2canvas(element, {
-        scale: 3, // Higher scale for better quality
+        scale: 2,
         logging: false,
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#fefefe'
       });
 
-      // Hide the element again
       element.style.visibility = 'hidden';
       element.style.position = 'absolute';
 
-      // Initialize PDF with proper dimensions
+      const messageSource = getSelectedMessageSource();
+      const title = messageSource === "Tool - Report" ? "Check-In Report" :
+        messageSource === "Tool - Sick Report" ? "Sick Leave Report" : "Chat Response";
+
       const imgData = canvas.toDataURL('image/png');
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
+      const imgWidth = 210;
+      const pageHeight = 297;
       const imgHeight = canvas.height * imgWidth / canvas.width;
       const doc = new jsPDF({
         orientation: 'portrait',
@@ -332,7 +369,6 @@ export default function Home() {
         format: 'a4'
       });
 
-      // Set PDF document properties
       doc.setProperties({
         title: title,
         subject: "Generated from Markdown",
@@ -340,15 +376,12 @@ export default function Home() {
         creator: "Markdown to PDF Converter"
       });
 
-      // Add image to PDF, potentially across multiple pages if needed
       let heightLeft = imgHeight;
       let position = 0;
 
-      // Add first page
       doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      // Add subsequent pages if content is longer than one page
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         doc.addPage();
@@ -356,96 +389,114 @@ export default function Home() {
         heightLeft -= pageHeight;
       }
 
-      // Save the PDF
       doc.save(`${title.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.pdf`);
-
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Failed to generate PDF. Please try again.");
     } finally {
       setLoading(false);
-      // Reset selected message after conversion
       setSelectedMessageIndex(null);
     }
-  };
+  }, [getSelectedMarkdownContent, getSelectedMessageSource]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === "Enter" && !loading && input.trim()) {
+      handleSend();
+    }
+  }, [handleSend, loading, input]);
+
+  const handleModeChange = useCallback((mode) => {
+    console.log("Changing apiMode to:", mode);
+    setApiMode(mode);
+    setHasSelectedMode(true);
+    setIsToolsOpen(false);
+  }, []);
+
+  const toggleToolsMenu = useCallback(() => {
+    setIsToolsOpen((prev) => !prev);
+  }, []);
 
   return (
-    <div>
-      <div className={styles.container}>
-        <div className={styles.chatbox}>
-          <div className={styles.messages}>
-            {messages.map((msg, idx) => {
-              // Find the AI message index for proper selection
-              let chartObjects = [];
-              const aiMessages = messages.filter(m => m.role === "ai");
-              const aiIndex = msg.role === "ai" ? aiMessages.indexOf(msg) : -1;
+    <div className={styles.container}>
+      <div className={styles.chatbox}>
+        <div className={`${styles.messages} ${hasNewMessage ? styles.newMessage : ''}`} ref={messagesRef} aria-live="polite">
+          {messages.map((msg, idx) => {
+            const aiMessages = messages.filter(m => m.role === "ai");
+            const aiIndex = msg.role === "ai" ? aiMessages.indexOf(msg) : -1;
+            let chartObjects = [];
 
-              if (msg.role === "ai") {
-                try {
-                  const jsonMatch = msg.content.match(/\{[\s\S]*\}/);
-                  if (jsonMatch) {
-                    const parsed = JSON.parse(jsonMatch[0]);
-
-                    if (parsed.labels && parsed.datasets) {
-                      // แบบไม่มีชื่อ (ใช้ default key)
-                      chartObjects.push({ key: "Chart", chart: parsed });
-                    } else {
-                      // แบบมีหลาย chart ระบุชื่อไว้
-                      for (const [key, chart] of Object.entries(parsed)) {
-                        if (chart.labels && chart.datasets) {
-                          chartObjects.push({ key, chart });
-                        }
+            if (msg.role === "ai") {
+              try {
+                const jsonMatch = msg.content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  const parsed = JSON.parse(jsonMatch[0]);
+                  if (parsed.labels && parsed.datasets) {
+                    chartObjects.push({ key: `Chart-${idx}`, chart: parsed });
+                  } else {
+                    for (const [key, chart] of Object.entries(parsed)) {
+                      if (chart.labels && chart.datasets) {
+                        chartObjects.push({ key: `${key}-${idx}`, chart });
                       }
                     }
                   }
-                } catch (e) {
-                  console.warn("Cannot parse chart JSON:", e);
                 }
+              } catch (e) {
+                console.warn("Cannot parse chart JSON:", e);
               }
+            }
 
-              return (
+            return (
+              <div
+                key={idx}
+                className={`${styles.messageRow} ${msg.role === "human" ? styles.userRow : styles.aiRow}`}
+                style={{ "--message-index": idx }}
+              >
+                <div className={`${styles.avatar} ${msg.role === "ai" ? styles.ai : ""}`}>
+                  {msg.role === "human" ? "U" : "AI"}
+                </div>
                 <div
-                  key={idx}
-                  className={`${styles.message} ${msg.role === "human" ? styles.user : styles.ai
-                    }`}
+                  className={`${styles.message} ${msg.role === "human" ? styles.user : styles.ai} ${msg.role === "ai" ? styles.selectable : ""}`}
+                  onClick={() => msg.role === "ai" && setSelectedMessageIndex(aiIndex)}
                 >
                   <div>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {chartObjects.length > 0 ? msg.content.replace(/\{[\s\S]*\}/, "").trim() : msg.content}
+                    </ReactMarkdown>
                     {chartObjects.map(({ key, chart }) => (
-                      <div key={key} style={{ marginTop: "1rem" }}>
+                      <div key={key} style={{ marginTop: "1rem", maxWidth: "100%", overflowX: "auto" }}>
                         <Bar
                           data={chart}
                           options={{
                             responsive: true,
+                            maintainAspectRatio: false,
                             plugins: {
                               legend: {
                                 position: "top",
                                 labels: {
-                                  color: "#fff",
+                                  color: "#f3f4f6",
+                                  font: { size: 14 }
                                 },
                               },
                               title: {
                                 display: true,
-                                text: `กราฟ: ${key}`,
-                                color: "#fff",
-                                font: {
-                                  size: 18,
-                                },
+                                text: `Chart: ${key.split('-')[0]}`,
+                                color: "#f3f4f6",
+                                font: { size: 16 },
+                                padding: { top: 10, bottom: 10 }
                               },
                             },
                             scales: {
                               x: {
-                                ticks: {
-                                  color: "#fff",
-                                },
+                                ticks: { color: "#f3f4f6", font: { size: 12 } },
+                                grid: { display: false }
                               },
                               y: {
-                                ticks: {
-                                  color: "#fff",
-                                },
+                                ticks: { color: "#f3f4f6", font: { size: 12 } },
+                                grid: { color: "#374151" }
                               },
                             },
                           }}
+                          height={200}
                         />
                       </div>
                     ))}
@@ -459,90 +510,119 @@ export default function Home() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedMessageIndex(aiIndex);
-                        setTimeout(() => handleMarkdownToPDF(), 0);
+                        handleMarkdownToPDF();
                       }}
                       title="Convert this message to PDF"
+                      aria-label="Convert message to PDF"
                     >
                       📄 PDF
                     </button>
                   )}
+                  {msg.role === "ai" && selectedMessageIndex === aiIndex && (
+                    <span className={styles.messageSelector}>Selected</span>
+                  )}
                 </div>
-              );
-            })}
-            {loading && <div className={styles.typing}>AI is thinking...</div>}
-            <div ref={messagesEndRef} />
-          </div>
+              </div>
+            );
+          })}
+          {loading && (
+            <div className={`${styles.messageRow} ${styles.aiRow}`}>
+              <div className={`${styles.avatar} ${styles.ai}`}>AI</div>
+              <div className={styles.typing}>
+                <span className={styles.typingText}>{typingText}</span>
+                <span className={styles.cursor}>|</span>
+              </div>
+            </div>
+          )}
+          <button
+            className={`${styles.scrollToBottomButton} ${!isAtBottom ? styles.visible : ''}`}
+            onClick={scrollToBottom}
+            aria-label="Scroll to bottom"
+            title="Scroll to bottom"
+          >
+            <span className={styles.icon}>⬇</span>
+          </button>
+        </div>
 
-          {/* Pill-style toggle buttons */}
-          <div className={styles.toolBar}>
-            <label className={styles.pillButton}>
-              📤 Upload CSV
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleUploadCsv}
-                className={styles.uploadHiddenInput}
-                ref={fileInputRef}
-              />
-            </label>
+        <div className={styles.toolBar}>
+          <div className={styles.toolsContainer}>
+            <Link href="/csv">
+              <button
+                className={styles.pillButton}
+                aria-label="Update database"
+              >
+                <span className={styles.icon}>📤</span> Update database
+              </button>
+            </Link>
             <button
-              className={`${styles.pillButton} ${apiMode === "chat" ? styles.activePill : ""
-                }`}
-              onClick={() => setApiMode("chat")}
+              className={`${styles.pillButton} ${isToolsOpen || hasSelectedMode ? styles.activePill : ""}`}
+              onClick={toggleToolsMenu}
+              ref={toolsButtonRef}
+              aria-expanded={isToolsOpen}
+              aria-controls="tools-menu"
+              aria-label={`Toggle tools menu, current mode: ${hasSelectedMode ? modeDisplayNames[apiMode] : "Tools"}`}
             >
-              CHAT
+              <span className={styles.icon}>🛠️</span> {hasSelectedMode ? modeDisplayNames[apiMode] : "Tools"}
             </button>
-            <button
-              className={`${styles.pillButton} ${apiMode === "report" ? styles.activePill : ""
-                }`}
-              onClick={() => setApiMode("report")}
-            >
-              CREATE REPORT
-            </button>
-            <button
-              className={`${styles.pillButton} ${apiMode === "sickReport" ? styles.activePill : ""
-                }`}
-              onClick={() => setApiMode("sickReport")}
-            >
-              CREATE SICK REPORT
-            </button>
-            <button
-              className={styles.resetCsvButton}
-              onClick={resetCsv}
-              disabled={!csvUploaded}
-            >
-              🧹 Reset CSV
-            </button>
+            {isToolsOpen && (
+              <div
+                className={styles.toolsMenu}
+                ref={toolsMenuRef}
+                id="tools-menu"
+                role="menu"
+              >
+                <button
+                  className={`${styles.menuItem} ${apiMode === "report" ? styles.activeMenuItem : ""}`}
+                  onClick={() => handleModeChange("report")}
+                  role="menuitem"
+                  aria-label="Switch to Report mode"
+                >
+                  <span className={styles.icon}>📊</span> Create Report
+                </button>
+                <button
+                  className={`${styles.menuItem} ${apiMode === "sickReport" ? styles.activeMenuItem : ""}`}
+                  onClick={() => handleModeChange("sickReport")}
+                  role="menuitem"
+                  aria-label="Switch to Sick Report mode"
+                >
+                  <span className={styles.icon}>🏥</span> Create Sick Report
+                </button>
+              </div>
+            )}
+          </div>
+          <div className={styles.resetButtonGroup}>
             <button
               className={styles.resetButton}
-              onClick={() => setMessages([])}
+              onClick={resetAll}
+              aria-label="Clear chat and CSV"
             >
-              🗑️ Reset Chat
-            </button>
-          </div>
-
-          {/* Input + send */}
-          <div className={styles.inputContainer}>
-            <input
-              type="text"
-              className={styles.inputField}
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            />
-            <button
-              className={styles.sendButton}
-              onClick={handleSend}
-              disabled={loading}
-            >
-              Send
+              <span className={styles.icon}>🗑️</span> Clear Chat
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Hidden markdown preview for PDF conversion */}
+        <div className={styles.inputContainer}>
+          <input
+            type="text"
+            className={styles.inputField}
+            placeholder="Type your message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={loading}
+            aria-label="Message input"
+            ref={inputRef}
+          />
+          <button
+            className={styles.sendButton}
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            aria-label="Send message"
+          >
+            <span className={styles.icon}>🚀</span> Send
+          </button>
+        </div>
+      </div>
       {renderMarkdownPreview()}
     </div>
   );

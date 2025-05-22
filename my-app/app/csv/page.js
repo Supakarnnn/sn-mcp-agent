@@ -1,11 +1,14 @@
 "use client";
 import { useState } from 'react';
+import Link from 'next/link';
+import styles from './page.module.css';
 
 export default function ImportPage() {
   const [csvFile, setCsvFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [imported, setImported] = useState(false);
+  const [isImporting, setIsImporting] = useState(false); // NEW: loading state
 
   const handleFileChange = (e) => {
     setCsvFile(e.target.files[0]);
@@ -31,6 +34,7 @@ export default function ImportPage() {
 
   const handleImport = async () => {
     if (!csvFile) return;
+    setIsImporting(true); // NEW: set loading state
     const formData = new FormData();
     formData.append('file', csvFile);
 
@@ -39,42 +43,58 @@ export default function ImportPage() {
       body: formData,
     });
 
+    setIsImporting(false); // NEW: unset loading state
+
     if (res.ok) setImported(true);
   };
 
   return (
-    <main className="min-h-screen p-8 bg-gray-50">
-      <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow">
-        <h1 className="text-2xl font-bold mb-4">📥 Import CSV to Database</h1>
+    <main className={styles.container}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>📥 Import CSV to Database</h1>
 
-        <input type="file" accept=".csv" onChange={handleFileChange} className="mb-4" />
+        <Link href="/chat">
+          <button>back</button>
+        </Link>
 
-        <div className="space-x-2 mb-4">
+        <input type="file" accept=".csv" onChange={handleFileChange} className={styles.fileInput} />
+
+        <div className={styles.buttonGroup}>
           <button
             onClick={handlePreview}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Preview
           </button>
-          <button
-            onClick={handleImport}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Import
-          </button>
+
+          {isImporting ? (
+            <div className="flex items-center px-4 py-2 bg-gray-300 text-gray-700 rounded">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              กำลังนำข้อมูลเข้าสู่ ฐานข้อมูล...
+            </div>
+          ) : (
+            <button
+              onClick={handleImport}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Import
+            </button>
+          )}
         </div>
 
         {imported && (
-          <div className="text-green-700 font-semibold mb-4">✅ Import completed successfully!</div>
+          <div className={styles.successMessage}>
+            ✅ Import completed successfully!
+          </div>
         )}
 
         {previewData.length > 0 && (
-          <div className="overflow-auto">
-            <table className="table-auto border-collapse w-full">
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
               <thead>
                 <tr>
                   {headers.map((header, index) => (
-                    <th key={index} className="border px-2 py-1 bg-gray-200 text-sm text-left">
+                    <th key={index} className={styles.th}>
                       {header}
                     </th>
                   ))}
@@ -82,9 +102,9 @@ export default function ImportPage() {
               </thead>
               <tbody>
                 {previewData.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="hover:bg-gray-50">
+                  <tr key={rowIndex} className={styles.tr}>
                     {headers.map((header, colIndex) => (
-                      <td key={colIndex} className="border px-2 py-1 text-sm">
+                      <td key={colIndex} className={styles.td}>
                         {row[header]}
                       </td>
                     ))}
