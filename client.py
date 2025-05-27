@@ -1,20 +1,20 @@
 import os
 import io
-import time
-import uuid
 import json
 import pandas as pd
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from fastapi import UploadFile, File, APIRouter, Form
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from typing import AsyncGenerator
+from fastapi import UploadFile, File
 from mysql.connector import connect, Error
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_core.messages import HumanMessage,AIMessage,SystemMessage
+from langchain_core.messages import HumanMessage,AIMessage
 from langchain_openai import ChatOpenAI
 from model.module import RequestMessage, AgentResponse
 from prompt.p import DATA_ADMIN
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_core.tools import tool
+from langchain_mcp_adapters.tools import load_mcp_tools
 from agent.graph import react_agent,react_sick_agent
 from agent.react import p_react_agent
 
@@ -49,6 +49,7 @@ llm = ChatOpenAI(
     base_url=os.environ.get("BASE_URL"),
     model='gpt-4o-mini',
     api_key=os.environ["OPENAI_API_KEY"],
+    streaming=True,
     temperature=0,
     top_p=0
 )
@@ -196,21 +197,24 @@ async def chat(chatmessage: RequestMessage):
             messages.append(HumanMessage(content=chat.content))
         elif chat.role == 'system':
             messages.append({"role": "system", "content": chat.content})
-    
-    async with MultiServerMCPClient(
+
+    client = MultiServerMCPClient(
         {
             "db": {
-                "url": "http://localhost:8080/sse",
-                "transport": "sse",
+                "url": "http://localhost:8080/mcp",
+                "transport": "streamable_http",
             }
         }
-    ) as client:
+    )
+
+    async with client.session("db") as session:
+        tools = await load_mcp_tools(session)
         
-        agent = p_react_agent(llm, client.get_tools(),DATA_ADMIN)
+        agent = p_react_agent(llm, tools, DATA_ADMIN)
         result = await agent.ainvoke({"messages": messages})   
         final_result = result["messages"][-1].content
 
-        return{
+        return {
             "response": final_result,
             "full_messages": result["messages"]
         }
@@ -225,16 +229,18 @@ async def create_report(request: RequestMessage):
         elif msg.role == 'ai':
             messages.append(AIMessage(content=msg.content))
         
-    async with MultiServerMCPClient(
+    client = MultiServerMCPClient(
         {
             "db": {
-                "url": "http://localhost:8080/sse",
-                "transport": "sse",
+                "url": "http://localhost:8080/mcp",
+                "transport": "streamable_http",
             }
         }
-    ) as client:
-        # print("MCP SERVER IS CONNECTED")
-        agent = react_agent(llm, client.get_tools(), "async")
+    )
+
+    async with client.session("db") as session:
+        tools = await load_mcp_tools(session)
+        agent = react_agent(llm, tools, "async")
         result = await agent.ainvoke({"messages": messages, "recursion_limit": 15})
         
         plann = result.get("report_plan","Noting was generated.")
@@ -251,47 +257,45 @@ async def create_report(request: RequestMessage):
     
 @app.post("/create-take-leave-report", response_model=AgentResponse)
 async def create_sick_report(request: RequestMessage):
-    try:
-        messages = []
-        for msg in request.messages:
-            if msg.role == 'human':
-                messages = msg.content
-                break
+    messages = []
+
+    for msg in request.messages:
+        if msg.role == 'human':
+            messages.append(HumanMessage(content=msg.content))
+        elif msg.role == 'ai':
+            messages.append(AIMessage(content=msg.content))
+
+
+    client = MultiServerMCPClient(
+        {
+            "db": {
+                "url": "http://localhost:8080/mcp",
+                "transport": "streamable_http",
+            }
+        }
+    )
+    async with client.session("db") as session:
+        tools = await load_mcp_tools(session)
+        agent = react_sick_agent(llm, tools, "async")
+        result = await agent.ainvoke({"messages": messages, "recursion_limit": 15})
         
-        try:
-            async with MultiServerMCPClient(
-                {
-                    "db": {
-                        "url": "http://localhost:8080/sse",
-                        "transport": "sse",
-                    }
-                }
-            ) as client:
-                # print("MCP SERVER IS CONNECTED")
-                agent = react_sick_agent(llm, client.get_tools(), "async")
-                result = await agent.ainvoke({"messages": [HumanMessage(content=messages)]},{"recursion_limit": 15})
-                
-                plann = result.get("report_plan","Noting was generated.")
-                queryy = result.get("report_query","Noting was generated.")
-                reportt = result.get("report_final","Noting was generated.")    
+        plann = result.get("report_plan","Noting was generated.")
+        queryy = result.get("report_query","Noting was generated.")
+        reportt = result.get("report_final","Noting was generated.")    
 
-                return AgentResponse(
-                    response=reportt,
-                    plan=plann,
-                    query=queryy,
-                    report=reportt
-                )
-        except Exception as e:
-
-            raise HTTPException(status_code=500, detail=f"Error connecting to MCP server: {str(e)}")
-            
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creating report: {str(e)}")
+        print(reportt)
+        return AgentResponse(
+            response=reportt,
+            plan=plann,
+            query=queryy,
+            report=reportt
+        )
 
 @app.get("/")
 async def health_check():
 
     return {"status": "healthy"}
+
 
 if __name__ == "__main__":
     import uvicorn

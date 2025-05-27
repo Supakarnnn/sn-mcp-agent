@@ -2,10 +2,7 @@ import os
 from fastmcp import FastMCP
 from dotenv import load_dotenv
 import logging
-import pandas as pd
-import io
 import json
-from mcp.types import Resource, Tool, TextContent
 from mysql.connector import connect, Error
 from decimal import Decimal
 from langchain_openai import ChatOpenAI
@@ -34,7 +31,6 @@ llm = ChatOpenAI(
     api_key=os.environ["OPENAI_API_KEY"],
     temperature=0,
     top_p=0
-    # max_completion_tokens=4096
 )
 
 DB_CONFIG = {
@@ -551,4 +547,4 @@ async def sick_RD_date(group: str,team: str, year: str,start_date: str,end_date:
 if __name__ == "__main__":
     mcp.run()
 
-    #fastmcp run mcp_server.py:mcp --transport sse --port 8080 --host 0.0.0.0
+    #fastmcp run mcp_server.py:mcp --transport streamable-http --port 8080 --host 0.0.0.0

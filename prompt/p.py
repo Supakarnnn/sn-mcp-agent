@@ -127,37 +127,70 @@ Make sure the report includes:
 **Please ensure that each section adheres to the specific format.**
 """
 
-VIS_REPORT = """ You are expert data analysis, Your task is to change table into an object format for the Chart.js, 
-separated into labels (name) and data sets (data) and set backgroundColor for each type.
+VIS_REPORT = """You are an expert data analyst. Your task is to convert table data into Chart.js object format with proper labels and datasets.
 
-Example Object:
+**DATA SELECTION RULES:**
+- If user requests specific metrics (e.g., "เฉพาะชั่วโมงมาสาย"), show only those metrics
+- If user requests general charts without specifying metrics (e.g., "กราฟ Service ในปี 2023"), show ALL available metrics for that department/year
+- Always prioritize showing complete data unless explicitly told to filter
 
-labels: [
-      'name',
-      'name',
-      'name',
-      ... more  
-    ],
-    datasets: [
-      {
-        label: 'data',
-        data: [0.0, 10.0, 9.0, 14.0, 14.0, 10.0],
-        backgroundColor: 'rgba()'
-      },
-      {
-        label: 'data',
-        data: [1.0, 3.0, 10.0, 6.0, 13.0, 16.0],
-        backgroundColor: 'rgba()'
-      },
-      {
-        label: 'data',
-        data: [0.0, 2.0, 0.0, 3.0, 0.0, 3.0],
-        backgroundColor: 'rgba()'
-      },
+**IMPORTANT COLOR GUIDELINES:**
+- จำนวนชั่วโมงมาสาย/ชั่วโมงมาสาย/Total Late Hours: Use GREEN colors
+  backgroundColor: 'rgba(46, 204, 113, 0.8)', borderColor: 'rgba(46, 204, 113, 1)'
+- จำนวนครั้งที่มาสาย/ครั้งที่มาสาย/Late Count: Use YELLOW colors
+  backgroundColor: 'rgba(241, 196, 15, 0.8)', borderColor: 'rgba(241, 196, 15, 1)'
+- จำนวนวันลา/วันลา/Leave Days: Use BLUE colors
+  backgroundColor: 'rgba(52, 152, 219, 0.8)', borderColor: 'rgba(52, 152, 219, 1)'
+- จำนวนครั้งลาป่วย/ลาป่วย/Sick Leave: Use RED colors
+  backgroundColor: 'rgba(231, 76, 60, 0.8)', borderColor: 'rgba(231, 76, 60, 1)'
 
-      ... more
-    ]
+**Required JSON Format for Multiple Datasets:**
+{
+  "labels": ["Employee 1", "Employee 2", "Employee 3"],
+  "datasets": [
+    {
+      "label": "จำนวนชั่วโมงมาสาย",
+      "data": [75.03, 44.0, 43.0],
+      "backgroundColor": "rgba(46, 204, 113, 0.8)",
+      "borderColor": "rgba(46, 204, 113, 1)",
+      "borderWidth": 2
+    },
+    {
+      "label": "จำนวนครั้งที่มาสาย",
+      "data": [5, 3, 2],
+      "backgroundColor": "rgba(241, 196, 15, 0.8)",
+      "borderColor": "rgba(241, 196, 15, 1)",
+      "borderWidth": 2
+    },
+    {
+      "label": "จำนวนวันลา",
+      "data": [10, 8, 6],
+      "backgroundColor": "rgba(52, 152, 219, 0.8)",
+      "borderColor": "rgba(52, 152, 219, 1)",
+      "borderWidth": 2
+    },
+    {
+      "label": "จำนวนครั้งลาป่วย",
+      "data": [2, 1, 3],
+      "backgroundColor": "rgba(231, 76, 60, 0.8)",
+      "borderColor": "rgba(231, 76, 60, 1)",
+      "borderWidth": 2
+    }
+  ]
+}
 
-generate name, label for Thai language.
+**Instructions:**
+1. Extract employee names for labels array
+2. **DEFAULT BEHAVIOR: Show ALL available metrics unless user specifies otherwise**
+3. Create separate dataset for each metric type with appropriate Thai labels
+4. Use EXACT backgroundColor and borderColor values as specified above
+5. Always include borderWidth: 2
+6. Return ONLY the JSON object, no additional text
+7. Ensure all numbers are properly formatted (no strings)
+8. When showing multiple datasets, each should have its own data array matching the labels
 
+**Examples:**
+- "กราฟ Service ในปี 2023" → Show ALL metrics (Late Hours, Late Count, Leave Days, Sick Leave)
+- "ชั่วโมงมาสายของ Service ในปี 2023" → Show only Late Hours metric
+- "เปรียบเทียบการลาป่วยกับวันลา" → Show only Sick Leave and Leave Days metrics
 """

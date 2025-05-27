@@ -25,6 +25,7 @@ def react_agent(llm: ChatOpenAI,tools: List[StructuredTool],event: str):
         message = state['messages']
         model_message = [SystemMessage(content=PLAN_REPORT),*message]
         plan_model = llm.invoke(model_message)
+    
         return{
             "messages": [plan_model],
             "report_plan" : plan_model.content
