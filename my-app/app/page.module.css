@@ -198,3 +198,24 @@
 .uploadHiddenInput {
   display: none;
 }
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  color: #374151;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  accent-color: #4caf50; /* optional for green checkbox */
+}
+
+.checkboxLabel input[type="checkbox"]:checked + span {
+  font-weight: bold;
+}
