@@ -512,7 +512,14 @@ export default function Home() {
                   className={`${styles.message} ${msg.role === "human" ? styles.user : styles.ai}`}
                 >
                   <div>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {
+                        // ซ่อนเฉพาะ JSON block ด้านล่างสุด (graphh)
+                        msg.role === "ai"
+                          ? msg.content.replace(/\n*```json[\s\S]*```/g, "") // ตัด JSON block
+                          : msg.content
+                      }
+                    </ReactMarkdown>
                     {chartObjects.map(({ key, chart }) => (
                       <div key={key} style={{
                         marginTop: "1rem",
