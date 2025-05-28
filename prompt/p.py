@@ -32,10 +32,10 @@ Your report should include the following sections, with headings translated into
 
 Following the section headers, create a detailed table to present the data for each group member under these headings:
 
-1. Working Hours for Each Member of the Group (ชั่วโมงการทำงาน)
-2. Total Hours of Late Arrival for Each Member Group (ชั่วโมงรวมที่มาสาย)
-3. Total of Late Count for Each Member Group (จำนวนครั้งที่มาสาย)
-4. Total Take Leave for Each Member Group (ชั่วโมงที่ลางาน)
+1. จำนวนวันรวมการทำงาน
+2. จำนวนวันรวมที่มาสาย
+3. จำนวนครั้งที่มาสาย
+4. จำนวนวันที่ลางาน
 
 Sample Table:
 
