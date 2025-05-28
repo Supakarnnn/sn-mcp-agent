@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import Link from 'next/link';
-import styles from './page.module.css';
+import styles from './csv.module.css';
 
 export default function ImportPage() {
   const [csvFile, setCsvFile] = useState(null);
@@ -48,38 +48,95 @@ export default function ImportPage() {
     if (res.ok) setImported(true);
   };
 
+  const handleClearFile = () => {
+    setCsvFile(null);
+    setPreviewData([]);
+    setHeaders([]);
+    setImported(false);
+    // Reset the file input value
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = '';
+  };
+
   return (
     <main className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>📥 Import CSV to Database</h1>
-
         <Link href="/chat">
-          <button>back</button>
+          <button className={styles.backButton} aria-label="Go back">
+            <svg
+              className={styles.backButtonIcon}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
         </Link>
 
-        <input type="file" accept=".csv" onChange={handleFileChange} className={styles.fileInput} />
+        <h1 className={styles.title}>📥 Import CSV to Database</h1>
+
+        <div className={styles.fileInputContainer}>
+          <input 
+            type="file" 
+            accept=".csv" 
+            onChange={handleFileChange} 
+            className={`${styles.fileInput} ${csvFile ? styles.hasFile : ''}`}
+            data-file-name={csvFile ? csvFile.name : ''}
+          />
+          <svg
+            className={styles.fileIcon}
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <line x1="10" y1="9" x2="8" y2="9" />
+          </svg>
+        </div>
 
         <div className={styles.buttonGroup}>
           <button
             onClick={handlePreview}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className={`${styles.button} ${styles.previewButton}`}
+            disabled={!csvFile}
           >
             Preview
           </button>
 
           {isImporting ? (
-            <div className="flex items-center px-4 py-2 bg-gray-300 text-gray-700 rounded">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+            <div className={styles.loading}>
+              <div className={styles.spinner}></div>
               กำลังนำข้อมูลเข้าสู่ ฐานข้อมูล...
             </div>
           ) : (
             <button
               onClick={handleImport}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className={`${styles.button} ${styles.importButton}`}
+              disabled={!csvFile}
             >
               Import
             </button>
           )}
+
+          <button
+            onClick={handleClearFile}
+            className={`${styles.button} ${styles.clearButton}`}
+            disabled={!csvFile}
+          >
+            Clear
+          </button>
         </div>
 
         {imported && (
@@ -87,8 +144,31 @@ export default function ImportPage() {
             ✅ Import completed successfully!
           </div>
         )}
+      </div>
 
-        {previewData.length > 0 && (
+      {previewData.length > 0 && (
+        <div className={styles.previewCard}>
+          <div className={styles.previewHeader}>
+            <div className={styles.previewTitle}>
+              <svg 
+                width="30" 
+                height="30" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+               stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <line x1="10" y1="9" x2="8" y2="9" />
+              </svg>
+              CSV Preview
+            </div>
+          </div>
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
@@ -113,8 +193,8 @@ export default function ImportPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </main>
   );
 }
