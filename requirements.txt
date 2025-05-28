@@ -4,7 +4,7 @@ langchain-community==0.3.22
 fastapi
 langchain-openai==0.3.14
 langchain-mcp-adapters==0.1.1
-fastmcp===2.5.1
+fastmcp==2.5.1
 python-multipart
-pandas===2.2.3
-mysql-connector-python===9.3.0
+pandas==2.2.3
+mysql-connector-python==9.3.0

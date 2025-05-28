@@ -146,7 +146,7 @@ async def upload_csv(file: UploadFile = File(...)):
         cursor = conn.cursor()
 
         for _, row in df.iterrows():
-            sql = """INSERT INTO test123 (
+            sql = """INSERT INTO employee_2025 (
                 employee_id, employee_name, employee_position,
                 employee_group, employee_team,
                 checkin_date, checkin_time, checkout_date, checkout_time,
@@ -245,14 +245,15 @@ async def create_report(request: RequestMessage):
         
         plann = result.get("report_plan","Noting was generated.")
         queryy = result.get("report_query","Noting was generated.")
-        reportt = result.get("report_final","Noting was generated.")    
+        reportt = result.get("report_final","Noting was generated.")
+        graphh = result.get("report_graph","Noting was generated.")      
 
-        print(reportt)
         return AgentResponse(
-            response=reportt,
+            response=reportt + graphh,
             plan=plann,
             query=queryy,
-            report=reportt
+            report=reportt,
+            graph=graphh
         )
     
 @app.post("/create-take-leave-report", response_model=AgentResponse)
@@ -281,14 +282,15 @@ async def create_sick_report(request: RequestMessage):
         
         plann = result.get("report_plan","Noting was generated.")
         queryy = result.get("report_query","Noting was generated.")
-        reportt = result.get("report_final","Noting was generated.")    
+        reportt = result.get("report_final","Noting was generated.")
+        graphh = result.get("report_graph","Noting was generated.")      
 
-        print(reportt)
         return AgentResponse(
-            response=reportt,
+            response=reportt + graphh,
             plan=plann,
             query=queryy,
-            report=reportt
+            report=reportt,
+            graph=graphh
         )
 
 @app.get("/")

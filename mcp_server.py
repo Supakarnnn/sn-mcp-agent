@@ -101,23 +101,23 @@ async def check_in_data_year(group: str, year: str):
     """
     เครื่องมือนี้เกี่ยวกับข้อมูลการเช็คอินหรือการเข้างานของทั้งปี
     args:
-        year (str): Must be "employee_2023" or "employee_2024" 
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"
     """
 
     try:
         logger.info(f"LLM is trying to use check_in_data_year and choose group: {group} and year: {year}")
 
-        if year not in ["employee_2023", "employee_2024"]:
-            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
 
         query = f"""
             SELECT 
                 employee_group,
                 employee_name,
-                SUM(work_hours) AS ชั่วโมงการทำงาน,
-                SUM(late_hours) AS ชั่วโมงรวมที่มาสาย,
+                ROUND(SUM(work_hours)/9, 2) AS จำนวนวันรวมการทำงาน,
+                ROUND(SUM(late_hours)/9, 2) AS จำนวนวันรวมที่มาสาย,
                 SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS จำนวนครั้งที่มาสาย,
-                SUM(leave_hours) AS ชั่วโมงที่ลางาน
+                ROUND(SUM(leave_hours)/9, 2) AS จำนวนวันที่ลางาน
             FROM 
                 {year}
             WHERE 
@@ -127,7 +127,7 @@ async def check_in_data_year(group: str, year: str):
                 employee_name
             ORDER BY 
                 employee_group,
-                ชั่วโมงรวมที่มาสาย DESC
+                จำนวนวันรวมที่มาสาย DESC
         """
 
         conn = get_db_connection()
@@ -143,21 +143,19 @@ async def check_in_data_year(group: str, year: str):
         logger.error(f"Error executing query: {e}")
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
     
-
-
 @mcp.tool("sick_count_year")
 async def sick_count_year(group: str, year: str):
     """
     เครื่องมือนี้เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ของทั้งปี
     args:
-        year (str): Must be "employee_2023" or "employee_2024"    
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"    
     """
 
     try:
         logger.info(f"LLM is trying to use sick_count_year and choose group: {group} and year: {year}")
 
-        if year not in ["employee_2023", "employee_2024"]:
-            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
 
         query = f"""
             SELECT 
@@ -203,24 +201,24 @@ async def check_in_RD_year(group: str, team:str ,year: str):
     เครื่องมือนี้คือเครื่องมือเฉพาะเกี่ยวกับแผนก R&D โดยมีการแยกทีม เกี่ยวกับข้อมูลการเช็คอินหรือการเข้างานของทั้งปี
     args:
         team (str): Must be "Data" or "Dev."
-        year (str): Must be "employee_2023" or "employee_2024" 
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"
     """
 
     try:
         logger.info(f"LLM is trying to use check_in_RD_year and choose group: {group} ,team: {team} and year: {year}")
 
-        if year not in ["employee_2023", "employee_2024"]:
-            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
 
         query = f"""
             SELECT 
                 employee_group,
                 employee_name,
                 employee_team,
-                SUM(work_hours) AS ชั่วโมงการทำงาน,
-                SUM(late_hours) AS ชั่วโมงรวมที่มาสาย,
+                ROUND(SUM(work_hours)/9, 2) AS จำนวนวันรวมการทำงาน,
+                ROUND(SUM(late_hours)/9, 2) AS จำนวนวันรวมที่มาสาย,
                 SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS จำนวนครั้งที่มาสาย,
-                SUM(leave_hours) AS ชั่วโมงที่ลางาน
+                ROUND(SUM(leave_hours)/9, 2) AS จำนวนวันที่ลางาน
             FROM 
                 {year}
             WHERE 
@@ -231,7 +229,7 @@ async def check_in_RD_year(group: str, team:str ,year: str):
                 employee_name
             ORDER BY 
                 employee_group,
-                ชั่วโมงรวมที่มาสาย DESC
+                จำนวนวันรวมที่มาสาย DESC
         """
 
         conn = get_db_connection()
@@ -254,14 +252,14 @@ async def sick_RD_year(group: str, team:str ,year: str):
     เครื่องมือนี้คือเครื่องมือเฉพาะเกี่ยวกับแผนก R&D โดยมีการแยกทีม เกี่ยวข้องกับการลาป่วย,ลากิจ,ลาประจำปี ของทั้งปี
     args:
         team (str): Must be "Data" or "Dev."
-        year (str): Must be "employee_2023" or "employee_2024"    
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"
     """
 
     try:
         logger.info(f"LLM is trying to use sick_RD_year and choose group: {group} ,team: {team} and year: {year}")
 
-        if year not in ["employee_2023", "employee_2024"]:
-            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
 
         query = f"""
             SELECT 
@@ -312,7 +310,7 @@ async def check_in_data_date(group: str, year: str,start_date: str,end_date: str
 
     args:
         group (str): Name of group such as "Back Office"
-        year (str): Must be "employee_2023" or "employee_2024"
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"
         start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
         end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
     """
@@ -320,17 +318,17 @@ async def check_in_data_date(group: str, year: str,start_date: str,end_date: str
     try:
         logger.info(f"LLM is trying to use check_in_data_date and choose group: {group} and year: {year} and date: {start_date} to {end_date}")
 
-        if year not in ["employee_2023", "employee_2024"]:
-            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
 
         query = f"""
             SELECT 
                 employee_group,
                 employee_name,
-                SUM(work_hours) AS ชั่วโมงการทำงาน,
-                SUM(late_hours) AS ชั่วโมงรวมที่มาสาย,
+                ROUND(SUM(work_hours)/9, 2) AS จำนวนวันรวมการทำงาน,
+                ROUND(SUM(late_hours)/9, 2) AS จำนวนวันรวมที่มาสาย,
                 SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS จำนวนครั้งที่มาสาย,
-                SUM(leave_hours) AS ชั่วโมงที่ลางาน
+                ROUND(SUM(leave_hours)/9, 2) AS จำนวนวันที่ลางาน
             FROM 
                 {year}
             WHERE 
@@ -344,7 +342,7 @@ async def check_in_data_date(group: str, year: str,start_date: str,end_date: str
                 employee_name
             ORDER BY 
                 employee_group,
-                ชั่วโมงรวมที่มาสาย DESC;
+                จำนวนวันรวมที่มาสาย DESC;
         """
 
         conn = get_db_connection()
@@ -368,7 +366,7 @@ async def sick_count_by_date(group: str, year: str,start_date: str,end_date: str
 
     args:
         group (str): Name of group such as "Back Office"
-        year (str): Must be "employee_2023" or "employee_2024"
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"
         start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
         end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
     """
@@ -376,8 +374,8 @@ async def sick_count_by_date(group: str, year: str,start_date: str,end_date: str
     try:
         logger.info(f"LLM is trying to use sick_count_by_date and choose group: {group} and year: {year} and date: {start_date} to {end_date}")
 
-        if year not in ["employee_2023", "employee_2024"]:
-            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
 
         query = f"""
            SELECT 
@@ -429,7 +427,7 @@ async def check_in_RD_date(group: str,team: str, year: str,start_date: str,end_d
     args:
         group (str): Name of group such as "Back Office"
         team (str): Must be "Data" or "Dev."
-        year (str): Must be "employee_2023" or "employee_2024"
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"
         start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
         end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
     """
@@ -437,18 +435,18 @@ async def check_in_RD_date(group: str,team: str, year: str,start_date: str,end_d
     try:
         logger.info(f"LLM is trying to use check_in_RD_date and choose group: {group} team: {team} and year: {year} and date: {start_date} to {end_date}")
 
-        if year not in ["employee_2023", "employee_2024"]:
-            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
 
         query = f"""
             SELECT 
                 employee_group,
                 employee_name,
                 employee_team,
-                SUM(work_hours) AS ชั่วโมงการทำงาน,
-                SUM(late_hours) AS ชั่วโมงรวมที่มาสาย,
+                ROUND(SUM(work_hours)/9, 2) AS จำนวนวันรวมการทำงาน,
+                ROUND(SUM(late_hours)/9, 2) AS จำนวนวันรวมที่มาสาย,
                 SUM(CASE WHEN late_count = 1 THEN 1 ELSE 0 END) AS จำนวนครั้งที่มาสาย,
-                SUM(leave_hours) AS ชั่วโมงที่ลางาน
+                ROUND(SUM(leave_hours)/9, 2) AS จำนวนวันที่ลางาน
             FROM 
                 {year}
             WHERE 
@@ -463,7 +461,7 @@ async def check_in_RD_date(group: str,team: str, year: str,start_date: str,end_d
                 employee_name
             ORDER BY 
                 employee_group,
-                ชั่วโมงรวมที่มาสาย DESC;
+                จำนวนวันรวมที่มาสาย DESC;
         """
 
         conn = get_db_connection()
@@ -488,7 +486,7 @@ async def sick_RD_date(group: str,team: str, year: str,start_date: str,end_date:
     args:
         group (str): Name of group such as "Back Office"
         team (str): Must be "Data" or "Dev."
-        year (str): Must be "employee_2023" or "employee_2024"
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"
         start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
         end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
     """
@@ -496,8 +494,8 @@ async def sick_RD_date(group: str,team: str, year: str,start_date: str,end_date:
     try:
         logger.info(f"LLM is trying to use sick_RD_date and choose group: {group} team: {team} and year: {year} and date: {start_date} to {end_date}")
 
-        if year not in ["employee_2023", "employee_2024"]:
-            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024'.")
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
 
         query = f"""
            SELECT 

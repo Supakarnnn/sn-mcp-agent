@@ -13,3 +13,4 @@ class AgentResponse(BaseModel):
     plan: Optional[str]
     query: Optional[str]
     report: Optional[str]
+    graph: Optional[str]

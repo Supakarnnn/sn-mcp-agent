@@ -6,7 +6,7 @@ from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIM
 from langchain_openai import ChatOpenAI
 from .state import AgentState
 from langchain.tools import StructuredTool
-from prompt.p import PLAN_REPORT,QUERY_REPORT,REPORT_MAKER_REPORT,PLAN_SICK_REPORT
+from prompt.p import PLAN_REPORT,QUERY_REPORT,REPORT_MAKER_REPORT,PLAN_SICK_REPORT,VIS_REPORT
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -39,16 +39,20 @@ def react_agent(llm: ChatOpenAI,tools: List[StructuredTool],event: str):
         return{
             "messages": [query_model],
         }
-    
+        
     def call_report(state: AgentState):
         print("drafing")
         messages = state['messages']
         report_messages = [SystemMessage(content=REPORT_MAKER_REPORT)] + messages
         report_model = llm.invoke(report_messages)
+
+        graph_messages = [SystemMessage(content=VIS_REPORT)] + messages
+        graph_model = llm.invoke(graph_messages)
         print("finish")
         return{
-            "messages": [report_messages],
-            "report_final" : report_model.content
+            "messages": [report_messages] + [graph_messages],
+            "report_final" : report_model.content,
+            "report_graph" : graph_model.content
             }
     
     async def call_tool(state: AgentState):
@@ -127,16 +131,20 @@ def react_sick_agent(llm: ChatOpenAI,tools: List[StructuredTool],event: str):
         return{
             "messages": [query_model],
         }
-    
+        
     def call_report(state: AgentState):
         print("drafing")
         messages = state['messages']
         report_messages = [SystemMessage(content=REPORT_MAKER_REPORT)] + messages
         report_model = llm.invoke(report_messages)
+
+        graph_messages = [SystemMessage(content=VIS_REPORT)] + messages
+        graph_model = llm.invoke(graph_messages)
         print("finish")
         return{
-            "messages": [report_messages],
-            "report_final" : report_model.content
+            "messages": [report_messages] + [graph_messages],
+            "report_final" : report_model.content,
+            "report_graph" : graph_model.content
             }
     
     async def call_tool(state: AgentState):

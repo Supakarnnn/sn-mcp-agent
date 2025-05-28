@@ -8,4 +8,5 @@ class AgentState(TypedDict):
     report_plan: Optional[str]
     report_query: Optional[str]
     report_final: Optional[str]
+    report_graph: Optional[str]
     revision_number: int
