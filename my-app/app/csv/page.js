@@ -61,7 +61,7 @@ export default function ImportPage() {
   return (
     <main className={styles.container}>
       <div className={styles.card}>
-        <Link href="/chat">
+        <Link href="/">
           <button className={styles.backButton} aria-label="Go back">
             <svg
               className={styles.backButtonIcon}
