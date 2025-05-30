@@ -1,5 +1,4 @@
-# Project
-
+# On-report
 ## Knowledge
 
 - 🛠️ MCP tools into [LangChain tools](https://python.langchain.com/docs/concepts/tools/) that can be used with [LangGraph](https://github.com/langchain-ai/langgraph) agents
@@ -291,3 +290,22 @@ Sample Table:
 Ensure that the report is well-organized and uses the precise translations provided for each section and heading.
 """
 ```
+
+## Start web client
+
+Go to the project directory
+```bash
+cd my-app
+```
+
+Install dependencies
+```bash
+npm install
+```
+
+Start the development server
+```bash
+npm run dev
+```
+
+The application will be running at http://localhost:3000 (or another port if specified).
