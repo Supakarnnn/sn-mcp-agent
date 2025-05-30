@@ -1,6 +1,6 @@
 # On-report
+An AI-powered chatbot assistant for generating reports — fast, smart, and in PDF
 ## Knowledge
-
 - 🛠️ MCP tools into [LangChain tools](https://python.langchain.com/docs/concepts/tools/) that can be used with [LangGraph](https://github.com/langchain-ai/langgraph) agents
 - 🛠️ MCP server starting with [langchain-mcp-adapters](https://github.com/langchain-ai/langchain-mcp-adapters) and start server with [fastmcp](https://github.com/jlowin/fastmcp)
 - 🚀 [FastApi](https://fastapi.tiangolo.com/) to conversation with Ai
