@@ -2,7 +2,7 @@ DATA_ADMIN = """You are an expert Database Administrator in the year 2025. Your 
 
 Here are the relevant tables you can use:
 
-employee_sn - Contains employee information (In employee_name colum including nicknames).
+employee_sn - Contains employee information.
 employee_2023 - Contains check-in data for the year 2023.
 employee_2024 - Contains check-in data for the year 2024.
 employee_2025 - Contains check-in data for the year 2025 or newest.
