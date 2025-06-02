@@ -47,7 +47,7 @@ def get_db_connection():
 
 llm = ChatOpenAI(
     base_url=os.environ.get("BASE_URL"),
-    model='gpt-4o-mini',
+    model='gpt-4.1-mini',
     api_key=os.environ["OPENAI_API_KEY"],
     streaming=True,
     temperature=0,
@@ -96,6 +96,22 @@ async def preview_csv(file: UploadFile = File(...)):
         df[col] = pd.to_datetime(df[col], format='%d/%m/%Y', errors='coerce')
         df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) else '')
 
+    def convert_end_time(value):
+        try:
+            start, end = value.split(" - ")
+            hour_map = {
+                "05:00 PM": "17:00 PM",
+                "05:30 PM": "17:30 PM",
+                "06:00 PM": "18:00 PM",
+                "06:00 PM": "18:00 PM",
+            }
+            end_converted = hour_map.get(end.strip(), end)
+            return f"{start.strip()} - {end_converted}"
+        except:
+            return value
+        
+    df['work_range_date'] = df['work_range_date'].apply(convert_end_time)
+
     df = df.fillna('0')
     preview = df.head(50).to_dict(orient="records")
     return {"headers": df.columns.tolist(), "rows": preview}
@@ -139,6 +155,22 @@ async def upload_csv(file: UploadFile = File(...)):
     for col in date_cols:
         df[col] = pd.to_datetime(df[col], format='%d/%m/%Y', errors='coerce')
         df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) else '')
+
+    def convert_end_time(value):
+        try:
+            start, end = value.split(" - ")
+            hour_map = {
+                "05:00 PM": "17:00 PM",
+                "05:30 PM": "17:30 PM",
+                "06:00 PM": "18:00 PM",
+                "06:00 PM": "18:00 PM",
+            }
+            end_converted = hour_map.get(end.strip(), end)
+            return f"{start.strip()} - {end_converted}"
+        except:
+            return value
+        
+    df['work_range_date'] = df['work_range_date'].apply(convert_end_time)
 
     df = df.fillna('0')
     try:

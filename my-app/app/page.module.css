@@ -21,7 +21,7 @@
   --table-header: #252525;
   --table-row-hover: #787070;
   --error-color: #a65d57;
-  
+
   display: flex;
   justify-content: center;
   align-items: center;
@@ -185,10 +185,14 @@
 }
 
 @keyframes simpleBounce {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0.6);
     opacity: 0.4;
   }
+
   40% {
     transform: scale(1);
     opacity: 0.7;
@@ -254,7 +258,7 @@
   color: var(--text-color);
   border-color: var(--success-color);
   box-shadow: 0 2px 4px rgba(77, 122, 111, 0.2),
-              0 4px 16px rgba(77, 122, 111, 0.15);
+    0 4px 16px rgba(77, 122, 111, 0.15);
 }
 
 .inputContainer {
@@ -263,6 +267,13 @@
   border-top: 1px solid var(--border-color);
   padding: 0.75rem;
   background: linear-gradient(180deg, var(--card-background) 0%, #1a1a1a 100%);
+}
+
+.dropdown {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
 }
 
 .inputField {
@@ -484,7 +495,7 @@
   accent-color: var(--success-color);
 }
 
-.checkboxLabel input[type="checkbox"]:checked + span {
+.checkboxLabel input[type="checkbox"]:checked+span {
   font-weight: bold;
   color: var(--text-color);
 }
@@ -549,9 +560,17 @@
 
 /* Animation Keyframes */
 @keyframes buttonPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes messageFadeIn {
@@ -559,6 +578,7 @@
     opacity: 0;
     transform: translateY(30px) scale(0.95);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -581,7 +601,7 @@
   background-color: white;
   border-radius: 8px;
   padding: 15px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .chartContainer::-webkit-scrollbar {
@@ -604,95 +624,96 @@
 }
 
 .checkboxLabel input[type="checkbox"] {
-  accent-color: #4caf50; /* optional for green checkbox */
+  accent-color: #4caf50;
+  /* optional for green checkbox */
 }
 
-.checkboxLabel input[type="checkbox"]:checked + span {
+.checkboxLabel input[type="checkbox"]:checked+span {
   font-weight: bold;
 }
 
-  .exportActions {
-    display: flex;
-    gap: 10px;
-    margin-top: 12px;
-    flex-wrap: wrap;
-  }
+.exportActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
 
-  .exportBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    font-family: inherit;
-  }
+.exportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-family: inherit;
+}
 
-  .exportBtnAll {
-    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
-    color: white;
-    font-weight: 600;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-    position: relative;
-  }
+.exportBtnAll {
+  background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+  color: white;
+  font-weight: 600;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
 
-  .exportBtnAll::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 8px;
-    padding: 2px;
-    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    z-index: -1;
-  }
+.exportBtnAll::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 8px;
+  padding: 2px;
+  background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  z-index: -1;
+}
 
-  .exportBtnAll:hover:not(:disabled) {
-    background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-  }
+.exportBtnAll:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
 
-  .exportBtnChart {
-    background: #3b82f6;
-    color: white;
-  }
+.exportBtnChart {
+  background: #3b82f6;
+  color: white;
+}
 
-  .exportBtnChart:hover:not(:disabled) {
-    background: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
-  }
+.exportBtnChart:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+}
 
-  .exportBtnReport {
-    background: #10b981;
-    color: white;
-  }
+.exportBtnReport {
+  background: #10b981;
+  color: white;
+}
 
-  .exportBtnReport:hover:not(:disabled) {
-    background: #059669;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
-  }
+.exportBtnReport:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
 
-  .exportBtn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
+.exportBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
 
-  .exportBtn:active:not(:disabled) {
-    transform: scale(0.98);
-  }
+.exportBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}

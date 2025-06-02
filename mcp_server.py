@@ -7,6 +7,7 @@ from mysql.connector import connect, Error
 from decimal import Decimal
 from langchain_openai import ChatOpenAI
 from prompt.p import VIS_REPORT
+from datetime import datetime
 
 load_dotenv()
 
@@ -47,6 +48,19 @@ def get_db_connection():
     except Error as e:
         logger.error(f"{e}")
         raise Exception(f"{str(e)}")
+    
+@mcp.tool("today_date")
+async def today_date():
+    """
+    เครื่องมือนี้จะช่วยดูเวลา ณ ปัจจุบัน
+    """
+    now = datetime.now()
+    logger.info(f"LLM is trying to use today_date")
+    return {
+        "date": now.strftime("%Y-%m-%d"),
+        "time": now.strftime("%H:%M:%S"),
+        "datetime": now.isoformat()
+    }
 
 @mcp.tool("execute_select_or_show")
 async def execute_select_or_show(query: str):
@@ -541,6 +555,52 @@ async def sick_RD_date(group: str,team: str, year: str,start_date: str,end_date:
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
     
 #############################################################################################################
+
+@mcp.tool("get_overtime")
+async def get_overtime(name: str, year: str,start_date: str,end_date: str): 
+    """
+    เครื่องมือนี้จะแสดง กะเวลาทำงาน, การเช็คอิน, การเช็คเอาท์ เพื่อวิเคราะห์ว่าทำงานล่วงเวลากี่ชั่วโมง/นาที
+
+    args:
+        name(str) : Must be "%name%"
+        year (str): Must be "employee_2023" or "employee_2024" or "employee_2025"
+        start_date (str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
+        end_date(str): Must be YEAR-MOUNTH-DAY such as "2023-01-01"
+    """
+
+    try:
+        logger.info(f"LLM is trying to use get_overtime: year: {year} start: {start_date} END: {end_date} and Name: {name}")
+
+        if year not in ["employee_2023", "employee_2024","employee_2025"]:
+            raise ValueError("Invalid year parameter. Must be 'employee_2023' or 'employee_2024' or 'employee_2025'.")
+
+        query = f"""
+        SELECT 
+            employee_name,
+            work_range_date,
+            checkin_date,
+            checkout_date,
+            checkin_time,
+            checkout_time 
+        FROM 
+            {year}
+        WHERE 
+            employee_name LIKE '{name}'
+            AND checkin_date BETWEEN '{start_date}' AND '{end_date}'
+        """
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query)
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        return json.dumps(results, ensure_ascii=False, cls=DecimalEncoder)
+
+    except Exception as e:
+        logger.error(f"Error executing query: {e}")
+        return {"result": json.dumps({"error": str(e)}), "status": "error"}
 
 if __name__ == "__main__":
     mcp.run()
