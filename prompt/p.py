@@ -36,6 +36,7 @@ Following the section headers, create a detailed table to present the data for e
 2. จำนวนวันรวมที่มาสาย
 3. จำนวนครั้งที่มาสาย
 4. จำนวนวันที่ลางาน
+5. รวมจำนวนวันทำงานทั้งแผนก: xxx วัน
 
 Sample Table:
 
@@ -64,6 +65,7 @@ Prepared this following sections in a table format:
 2. Number of sick leave days for each member (sick day) (ลาป่วย)
 3. Number of errand Day for each member (errand day) (ลากิจ)
 4. Number of take leave day for each member (จำนวนวันลาทั้งหมด)
+5. รวมจำนวนวันลาทั้งแผนก: xxx วัน
 
 Sample Table:
 
@@ -154,6 +156,7 @@ VIS_REPORT = """You are an expert data analyst. Your task is to convert table da
   ]
 }
 
+return no description or const.
 **Examples:**
 - "กราฟ Service ในปี 2023" → Show ALL metrics
 """
