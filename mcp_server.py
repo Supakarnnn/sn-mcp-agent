@@ -7,6 +7,7 @@ from mysql.connector import connect, Error
 from decimal import Decimal
 from langchain_openai import ChatOpenAI
 from prompt.p import VIS_REPORT
+from datetime import datetime
 
 load_dotenv()
 
@@ -47,6 +48,19 @@ def get_db_connection():
     except Error as e:
         logger.error(f"{e}")
         raise Exception(f"{str(e)}")
+    
+@mcp.tool("today_date")
+async def today_date():
+    """
+    เครื่องมือนี้จะช่วยดูเวลา ณ ปัจจุบัน
+    """
+    now = datetime.now()
+    logger.info(f"LLM is trying to use today_date")
+    return {
+        "date": now.strftime("%Y-%m-%d"),
+        "time": now.strftime("%H:%M:%S"),
+        "datetime": now.isoformat()
+    }
 
 @mcp.tool("execute_select_or_show")
 async def execute_select_or_show(query: str):
