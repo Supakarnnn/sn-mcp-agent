@@ -8,27 +8,15 @@ export const useMarkdownToPDF = ({
     setLoading,
     setSelectedMessageIndex,
     getSelectedMarkdownContent,
-    getSelectedMessageSource,
+    getSelectedMessageSource
 }) => {
-    const handleMarkdownToPDF = useCallback(async () => {
-        console.log('markdownRef.current:', markdownRef.current);
-
-        const markdownContent = getSelectedMarkdownContent();
-        if (!markdownContent) {
-            alert("No AI response to convert to PDF!");
-            return;
-        }
-
-        setLoading(true);
-        const originalScrollPosition = messagesContainerRef.current?.scrollTop;
-
+    return async () => {
         try {
+            setLoading(true);
             const element = markdownRef.current;
-            if (!element) {
-                throw new Error("Markdown preview element not found");
-            }
+            if (!element) return;
 
-            // Save original styles
+            // บันทึก style เดิม
             const originalStyles = {
                 visibility: element.style.visibility,
                 position: element.style.position,
@@ -36,35 +24,30 @@ export const useMarkdownToPDF = ({
                 left: element.style.left,
                 zIndex: element.style.zIndex,
                 width: element.style.width,
-                height: element.style.height,
-                overflow: element.style.overflow,
                 backgroundColor: element.style.backgroundColor,
-                fontFamily: element.style.fontFamily,
-                fontSize: element.style.fontSize,
-                lineHeight: element.style.lineHeight,
-                padding: element.style.padding,
-                margin: element.style.margin
+                fontFamily: element.style.fontFamily
             };
 
-            // Prepare element for capture - make it visible but off-screen
-            element.style.visibility = "visible"; // เปลี่ยนจาก hidden เป็น visible
+            // ตั้งค่าสำหรับ capture
+            element.style.visibility = "visible";
             element.style.position = "absolute";
             element.style.top = "-9999px";
             element.style.left = "0";
-            element.style.zIndex = "1000"; // เปลี่ยนเป็นค่าบวก
-            element.style.width = "1200px"; // ใช้ pixel แทน mm
+            element.style.zIndex = "1000";
+            element.style.width = "1200px";
             element.style.minWidth = "1200px";
             element.style.maxWidth = "none";
             element.style.height = "auto";
             element.style.minHeight = "auto";
-            element.style.overflow = "visible"; // เปลี่ยนเป็น visible
+            element.style.overflow = "visible";
             element.style.backgroundColor = "#ffffff";
             element.style.fontFamily = "Arial, sans-serif";
-            element.style.fontSize = "14px";
+            element.style.fontSize = "24px";
             element.style.lineHeight = "1.5";
-            element.style.padding = "20px";
+            element.style.padding = "40px";
             element.style.margin = "0";
             element.style.color = "#333333";
+            element.style.boxSizing = "border-box";
 
             // Remove unwanted elements
             const unwantedSelectors = [
@@ -77,15 +60,10 @@ export const useMarkdownToPDF = ({
                 '[style*="background-color: rgb(59, 130, 246)"]'
             ];
 
-            const hiddenElements = [];
             unwantedSelectors.forEach(selector => {
                 try {
                     const elements = element.querySelectorAll(selector);
                     elements.forEach(el => {
-                        hiddenElements.push({
-                            element: el,
-                            originalDisplay: el.style.display
-                        });
                         el.style.display = 'none';
                     });
                 } catch (e) {
@@ -93,139 +71,191 @@ export const useMarkdownToPDF = ({
                 }
             });
 
-            // Style tables for better PDF rendering
-            const tables = element.querySelectorAll('table');
-            const originalTableStyles = [];
-            tables.forEach((table, index) => {
-                // Save original styles
-                originalTableStyles[index] = {
-                    width: table.style.width,
-                    tableLayout: table.style.tableLayout,
-                    borderCollapse: table.style.borderCollapse,
-                    fontSize: table.style.fontSize,
-                    margin: table.style.margin
-                };
+            // Style text content
+            const paragraphs = element.querySelectorAll('p');
+            paragraphs.forEach(p => {
+                p.style.fontSize = "24px";
+                p.style.lineHeight = "1.6";
+                p.style.margin = "12px 0";
+                p.style.textAlign = "justify";
+            });
 
-                // Apply PDF-friendly styles
+            // Style numbers
+            const numbers = element.querySelectorAll('.number, .count, td:nth-child(2)');
+            numbers.forEach(num => {
+                num.style.fontSize = "24px";
+                num.style.fontWeight = "500";
+            });
+
+            // Style headings
+            const h1Elements = element.querySelectorAll('h1');
+            h1Elements.forEach(h1 => {
+                h1.style.color = "#1e40af";
+                h1.style.fontSize = "42px";
+                h1.style.fontWeight = "700";
+                h1.style.margin = "30px 0 20px 0";
+                h1.style.paddingBottom = "12px";
+                h1.style.borderBottom = "2px solid #e5e7eb";
+            });
+
+            const h2Elements = element.querySelectorAll('h2');
+            h2Elements.forEach(h2 => {
+                h2.style.color = "#3730a3";
+                h2.style.fontSize = "36px";
+                h2.style.fontWeight = "600";
+                h2.style.margin = "25px 0 15px 0";
+                h2.style.paddingLeft = "12px";
+                h2.style.borderLeft = "4px solid #3b82f6";
+            });
+
+            const h3Elements = element.querySelectorAll('h3');
+            h3Elements.forEach(h3 => {
+                h3.style.color = "#4338ca";
+                h3.style.fontSize = "32px";
+                h3.style.fontWeight = "600";
+                h3.style.margin = "20px 0 12px 0";
+            });
+
+            // Style lists
+            const listItems = element.querySelectorAll('li');
+            listItems.forEach(item => {
+                item.style.fontSize = "24px";
+                item.style.lineHeight = "1.7";
+                item.style.margin = "8px 0";
+            });
+
+            // Style blockquotes
+            const blockquotes = element.querySelectorAll('blockquote');
+            blockquotes.forEach(quote => {
+                quote.style.borderLeft = "4px solid #3b82f6";
+                quote.style.backgroundColor = "#f8fafc";
+                quote.style.margin = "20px 0";
+                quote.style.padding = "15px 20px";
+                quote.style.fontStyle = "italic";
+                quote.style.color = "#4b5563";
+                quote.style.borderRadius = "0 6px 6px 0";
+            });
+
+            // Style code blocks
+            const codeBlocks = element.querySelectorAll('pre');
+            codeBlocks.forEach(block => {
+                block.style.backgroundColor = "#f8fafc";
+                block.style.border = "1px solid #e2e8f0";
+                block.style.borderRadius = "6px";
+                block.style.padding = "15px";
+                block.style.margin = "15px 0";
+                block.style.overflowX = "auto";
+                block.style.fontFamily = "'Courier New', monospace";
+                block.style.fontSize = "20px";
+            });
+
+            // Style inline code
+            const inlineCodes = element.querySelectorAll('code');
+            inlineCodes.forEach(code => {
+                code.style.backgroundColor = "#f1f5f9";
+                code.style.padding = "2px 6px";
+                code.style.borderRadius = "4px";
+                code.style.fontFamily = "'Courier New', monospace";
+                code.style.fontSize = "20px";
+                code.style.color = "#dc2626";
+            });
+
+            // Style tables
+            const tables = element.querySelectorAll('table');
+            tables.forEach(table => {
                 table.style.width = "100%";
                 table.style.tableLayout = "auto";
                 table.style.borderCollapse = "collapse";
-                table.style.fontSize = "12px";
-                table.style.margin = "10px 0";
-
-                // Style cells
-                const cells = table.querySelectorAll('td, th');
-                cells.forEach(cell => {
-                    cell.style.padding = "8px";
-                    cell.style.border = "1px solid #ddd";
-                    cell.style.fontSize = "12px";
-                    cell.style.lineHeight = "1.3";
-                });
+                table.style.fontSize = "24px";
+                table.style.margin = "15px 0";
+                table.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
+                table.style.borderRadius = "8px";
+                table.style.overflow = "hidden";
+                table.style.pageBreakInside = "avoid";
+                table.style.breakInside = "avoid";
 
                 // Style headers
                 const headers = table.querySelectorAll('th');
                 headers.forEach(header => {
-                    header.style.backgroundColor = "#4F90F7";
+                    header.style.background = "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)";
                     header.style.color = "white";
+                    header.style.padding = "14px 15px";
+                    header.style.textAlign = "left";
+                    header.style.fontSize = "26px";
                     header.style.fontWeight = "bold";
+                    header.style.textTransform = "uppercase";
+                    header.style.letterSpacing = "0.5px";
+                });
+
+                // Style cells and rows
+                const rows = table.querySelectorAll('tr');
+                rows.forEach((row, index) => {
+                    row.style.pageBreakInside = "avoid";
+                    row.style.breakInside = "avoid";
+                    
+                    if (index % 2 === 1) {
+                        row.style.backgroundColor = "#f8fafc";
+                    }
+                    
+                    const cells = row.querySelectorAll('td');
+                    cells.forEach(cell => {
+                        cell.style.padding = "12px 15px";
+                        cell.style.border = "1px solid #ddd";
+                        cell.style.fontSize = "24px";
+                        cell.style.lineHeight = "1.5";
+                        cell.style.verticalAlign = "top";
+                    });
                 });
             });
 
-            // Wait for styles to apply
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            // Capture with html2canvas
-            const canvas = await html2canvas(element, {
-                scale: 2.5, // เพิ่ม scale สำหรับความคมชัด
+            // Capture markdown content
+            const markdownCanvas = await html2canvas(element, {
+                scale: 2.5,
                 logging: false,
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: "#ffffff",
-                width: 1200, // ใช้ค่าที่ตั้งไว้
+                width: 1200,
                 height: element.scrollHeight,
                 windowWidth: 1200,
                 windowHeight: element.scrollHeight,
                 scrollX: 0,
                 scrollY: 0,
-                ignoreElements: (element) => {
-                    // Skip unwanted elements during capture
-                    const tagName = element.tagName?.toLowerCase();
-                    const className = element.className?.toString() || '';
-                    const text = element.textContent || '';
-
-                    return (
-                        tagName === 'button' ||
-                        className.includes('btn') ||
-                        className.includes('export') ||
-                        text.includes('Export') ||
-                        text.includes('Download')
-                    );
-                },
                 onclone: (clonedDoc) => {
-                    // Additional cleanup in cloned document
-                    const clonedElement = clonedDoc.body;
+                    const clonedElement = clonedDoc.querySelector('[data-element-id]') ||
+                        clonedDoc.body.firstChild;
                     if (clonedElement) {
                         clonedElement.style.fontFamily = "Arial, sans-serif";
-                        clonedElement.style.fontSize = "14px";
+                        clonedElement.style.fontSize = "24px";
                         clonedElement.style.backgroundColor = "#ffffff";
                         clonedElement.style.color = "#333333";
-
-                        // Remove unwanted elements from clone
-                        const unwantedInClone = clonedElement.querySelectorAll(
-                            'button, [type="button"], .btn, .export-btn'
-                        );
-                        unwantedInClone.forEach(el => el.remove());
                     }
                 }
             });
 
-            // Restore original styles
-            Object.assign(element.style, originalStyles);
-
-            // Restore hidden elements
-            hiddenElements.forEach(({ element, originalDisplay }) => {
-                element.style.display = originalDisplay || '';
-            });
-
-            // Restore table styles
-            tables.forEach((table, index) => {
-                if (originalTableStyles[index]) {
-                    Object.assign(table.style, originalTableStyles[index]);
-                }
-            });
-
             // Create PDF
-            const messageSource = getSelectedMessageSource();
-            const title = messageSource === "Tool - Report"
-                ? "Check-In Report"
-                : messageSource === "Tool - Sick Report"
-                    ? "Sick Leave Report"
-                    : "Chat Response";
-
-            if (canvas.width === 0 || canvas.height === 0) {
-                throw new Error("Canvas is empty - no content captured");
-            }
-
-            const imgData = canvas.toDataURL("image/png", 0.95);
-            const doc = new jsPDF({
+            const pdf = new jsPDF({
                 orientation: "portrait",
                 unit: "mm",
-                format: "a4",
+                format: "a4"
             });
 
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const usablePageHeight = pageHeight - 40;
+            let yPosition = 15;
 
             // Add header
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(18);
-            doc.setTextColor(34, 139, 34);
-            doc.text(title, pageWidth / 2, 20, { align: 'center' });
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(18);
+            pdf.setTextColor(34, 139, 34);
+            pdf.text("On Report", pageWidth / 2, yPosition, { align: 'center' });
 
-            // Add date
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            doc.setTextColor(100, 100, 100);
+            yPosition += 7;
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(15);
+            pdf.setTextColor(100, 100, 100);
+
             const currentDate = new Date().toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
@@ -233,106 +263,118 @@ export const useMarkdownToPDF = ({
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            doc.text(`Generated: ${currentDate}`, pageWidth / 2, 28, { align: 'center' });
+            pdf.text(`Generated: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
 
-            // Add separator line
-            doc.setDrawColor(34, 139, 34);
-            doc.setLineWidth(0.5);
-            doc.line(20, 32, pageWidth - 20, 32);
+            yPosition += 4;
+            pdf.setDrawColor(34, 139, 34);
+            pdf.setLineWidth(0.5);
+            pdf.line(40, yPosition, pageWidth - 40, yPosition);
+            yPosition += 5;
 
-            // Calculate image dimensions
-            const margin = 20;
-            const availableWidth = pageWidth - (2 * margin);
-            const availableHeight = pageHeight - 50; // เหลือพื้นที่สำหรับ header
-            const imgAspectRatio = canvas.width / canvas.height;
+            // Add content
+            const imgData = markdownCanvas.toDataURL('image/png', 0.95);
+            const imgWidth = pageWidth - 40;
+            const imgHeight = (markdownCanvas.height * imgWidth) / markdownCanvas.width;
+            const remainingSpaceInPage = pageHeight - yPosition - 20;
 
-            let imgWidth = availableWidth;
-            let imgHeight = imgWidth / imgAspectRatio;
+            // จัดการการแบ่งหน้าสำหรับรูปภาพ
+            if (imgHeight > remainingSpaceInPage) {
+                // ถ้ารูปภาพใหญ่มากจนต้องแบ่งหน้า แต่ยังพอใส่ในหน้าเดียวได้
+                if (imgHeight <= usablePageHeight && remainingSpaceInPage < usablePageHeight * 0.4) {
+                    // เพิ่มหน้าใหม่และใส่รูปภาพในหน้าใหม่
+                    pdf.addPage();
+                    yPosition = 30;
+                    pdf.addImage(imgData, "PNG", 20, yPosition, imgWidth, imgHeight);
+                    yPosition += imgHeight + 20;
+                }
+                // ถ้ารูปภาพใหญ่มากจนต้องแบ่งเป็นหลายหน้า
+                else if (imgHeight > usablePageHeight) {
+                    const maxHeightPerPage = usablePageHeight;
+                    let currentY = yPosition;
+                    let sourceY = 0;
+                    const sourceHeight = markdownCanvas.height;
+                    const sourceWidth = markdownCanvas.width;
+                    let isFirstPart = true;
 
-            // If image is too tall, adjust dimensions
-            if (imgHeight > availableHeight) {
-                imgHeight = availableHeight;
-                imgWidth = imgHeight * imgAspectRatio;
-            }
+                    while (sourceY < sourceHeight) {
+                        const availableSpace = isFirstPart ? (pageHeight - currentY - 20) : maxHeightPerPage;
+                        const heightForThisPage = Math.min(
+                            availableSpace,
+                            ((sourceHeight - sourceY) * imgWidth) / sourceWidth
+                        );
 
-            let yPosition = 40;
+                        const sourceHeightForThisPage = (heightForThisPage * sourceWidth) / imgWidth;
 
-            // Handle multi-page content
-            if (imgHeight > availableHeight) {
-                // Split image across multiple pages
-                const maxHeightPerPage = availableHeight;
-                let remainingHeight = imgHeight;
-                let sourceY = 0;
-                let currentPage = 1;
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = sourceWidth;
+                        tempCanvas.height = sourceHeightForThisPage;
+                        const tempCtx = tempCanvas.getContext('2d');
 
-                while (remainingHeight > 0) {
-                    const heightForThisPage = Math.min(remainingHeight, maxHeightPerPage);
-                    const sourceHeightForThisPage = (heightForThisPage / imgHeight) * canvas.height;
+                        tempCtx.drawImage(
+                            markdownCanvas,
+                            0, sourceY, sourceWidth, sourceHeightForThisPage,
+                            0, 0, sourceWidth, sourceHeightForThisPage
+                        );
 
-                    // Create temporary canvas for this page portion
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = canvas.width;
-                    tempCanvas.height = sourceHeightForThisPage;
-                    const tempCtx = tempCanvas.getContext('2d');
+                        const partialImgData = tempCanvas.toDataURL("image/png", 0.95);
+                        pdf.addImage(partialImgData, "PNG", 20, currentY, imgWidth, heightForThisPage);
 
-                    tempCtx.drawImage(
-                        canvas,
-                        0, sourceY, canvas.width, sourceHeightForThisPage,
-                        0, 0, canvas.width, sourceHeightForThisPage
-                    );
+                        sourceY += sourceHeightForThisPage;
+                        currentY += heightForThisPage;
 
-                    const partialImgData = tempCanvas.toDataURL("image/png", 0.95);
-
-                    if (currentPage > 1) {
-                        doc.addPage();
-                        yPosition = 20;
+                        if (sourceY < sourceHeight) {
+                            pdf.addPage();
+                            currentY = 30;
+                            isFirstPart = false;
+                        }
                     }
 
-                    doc.addImage(partialImgData, "PNG", margin, yPosition, imgWidth, heightForThisPage);
-
-                    sourceY += sourceHeightForThisPage;
-                    remainingHeight -= heightForThisPage;
-                    currentPage++;
+                    yPosition = currentY + 20;
                 }
-            } else {
-                // Single page
-                doc.addImage(imgData, "PNG", margin, yPosition, imgWidth, imgHeight);
+                // กรณีอื่นๆ ให้ใส่รูปในหน้าแรกโดยตรง
+                else {
+                    pdf.addImage(imgData, "PNG", 20, yPosition, imgWidth, Math.min(imgHeight, remainingSpaceInPage - 10));
+
+                    if (imgHeight > remainingSpaceInPage - 10) {
+                        pdf.addPage();
+                        yPosition = 30;
+                    } else {
+                        yPosition += imgHeight + 20;
+                    }
+                }
+            }
+            // ถ้ารูปภาพพอใส่ในหน้าแรกได้
+            else {
+                pdf.addImage(imgData, "PNG", 20, yPosition, imgWidth, imgHeight);
+                yPosition += imgHeight + 20;
             }
 
             // Add page numbers
-            const totalPages = doc.internal.getNumberOfPages();
+            const totalPages = pdf.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
-                doc.setPage(i);
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(8);
-                doc.setTextColor(150, 150, 150);
-                doc.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
+                pdf.setPage(i);
+                pdf.setFont("helvetica", "normal");
+                pdf.setFontSize(8);
+                pdf.setTextColor(150, 150, 150);
+                pdf.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
             }
-
-            // Set PDF properties
-            doc.setProperties({
-                title: title,
-                subject: "Generated from Markdown",
-                author: "AI Assistant",
-                creator: "Markdown to PDF Converter",
-            });
 
             // Save PDF
-            const fileName = `${title.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.pdf`;
-            doc.save(fileName);
+            const source = getSelectedMessageSource();
+            const currentDateForFile = new Date().toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            pdf.save(`${source}_${currentDateForFile}.pdf`);
 
-            console.log("PDF generated successfully");
+            // คืนค่า style เดิม
+            Object.assign(element.style, originalStyles);
 
         } catch (error) {
-            console.error("Error generating PDF:", error);
-            alert(`Failed to generate PDF: ${error.message}`);
+            console.error('Error generating PDF:', error);
         } finally {
             setLoading(false);
-            setSelectedMessageIndex(null);
-            if (messagesContainerRef.current) {
-                messagesContainerRef.current.scrollTop = originalScrollPosition;
-            }
         }
-    }, [getSelectedMarkdownContent, getSelectedMessageSource]);
-    return handleMarkdownToPDF;
+    };
 };

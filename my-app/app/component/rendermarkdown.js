@@ -6,13 +6,6 @@ import styles from "../page.module.css";
 const RenderMarkdownPreview = forwardRef(({ markdownContent, messageSource }, ref) => {
   if (!markdownContent) return null;
 
-  const title =
-    messageSource === "Tool - Report"
-      ? "Check-In Report"
-      : messageSource === "Tool - Sick Report"
-      ? "Sick Leave Report"
-      : "Chat Response";
-
   return (
     <div
       ref={ref}
@@ -38,87 +31,66 @@ const RenderMarkdownPreview = forwardRef(({ markdownContent, messageSource }, re
         pointerEvents: "none",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          borderBottom: "3px solid #3b82f6",
-          paddingBottom: "20px",
-          marginBottom: "30px",
-          textAlign: "center",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "26pt",
-            marginBottom: "5px",
-            color: "#1e40af",
-            fontWeight: "700",
-            letterSpacing: "-0.5px",
-          }}
-        >
-          {title}
-        </h1>
-        <div
-          style={{
-            fontSize: "10pt",
-            color: "#6b7280",
-            fontStyle: "italic",
-            marginTop: "10px",
-          }}
-        >
-          <div>
-            Generated on:{" "}
-            {new Date().toLocaleDateString("th-TH", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </div>
-          <div>Time: {new Date().toLocaleTimeString("th-TH")}</div>
-        </div>
-      </div>
-
       {/* Content */}
       <div className={styles.markdownContent}>
+        <div className="markdown-content markdown-table">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              h1: ({ children }) => <h1 style={{ fontSize: '42px', color: '#1e40af', fontWeight: '700', margin: '30px 0 20px 0', paddingBottom: '12px', borderBottom: '2px solid #e5e7eb' }}>{children}</h1>,
+              h2: ({ children }) => <h2 style={{ fontSize: '36px', color: '#3730a3', fontWeight: '600', margin: '25px 0 15px 0', paddingLeft: '12px', borderLeft: '4px solid #3b82f6' }}>{children}</h2>,
+              h3: ({ children }) => <h3 style={{ fontSize: '32px', color: '#4338ca', fontWeight: '600', margin: '20px 0 12px 0' }}>{children}</h3>,
+              table: ({ children }) => <table>{children}</table>,
+              thead: ({ children }) => <thead>{children}</thead>,
+              th: ({ children }) => <th>{children}</th>,
+              td: ({ children }) => <td>{children}</td>,
+            }}
+          >
+            {markdownContent.replace(/\{[\s\S]*\}/, "").trim()}
+          </ReactMarkdown>
+        </div>
         <style jsx>{`
           .markdown-content {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           }
           .markdown-content h1 {
             color: #1e40af;
-            font-size: 20pt;
+            font-size: 42px;
             font-weight: 700;
-            margin: 25px 0 15px 0;
-            padding-bottom: 8px;
+            margin: 30px 0 20px 0;
+            padding-bottom: 12px;
             border-bottom: 2px solid #e5e7eb;
           }
           .markdown-content h2 {
             color: #3730a3;
-            font-size: 16pt;
+            font-size: 36px;
             font-weight: 600;
-            margin: 20px 0 12px 0;
-            padding-left: 10px;
+            margin: 25px 0 15px 0;
+            padding-left: 12px;
             border-left: 4px solid #3b82f6;
           }
           .markdown-content h3 {
             color: #4338ca;
-            font-size: 14pt;
+            font-size: 32px;
             font-weight: 600;
-            margin: 18px 0 10px 0;
+            margin: 20px 0 12px 0;
           }
           .markdown-content p {
             margin: 12px 0;
             text-align: justify;
             line-height: 1.8;
+            font-size: 24px;
           }
           .markdown-content ul,
           .markdown-content ol {
             margin: 15px 0;
             padding-left: 25px;
+            font-size: 24px;
           }
           .markdown-content li {
             margin: 8px 0;
             line-height: 1.7;
+            font-size: 24px;
           }
           .markdown-table table {
             border-collapse: collapse;
@@ -127,6 +99,7 @@ const RenderMarkdownPreview = forwardRef(({ markdownContent, messageSource }, re
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
+            font-size: 24px;
           }
           .markdown-table thead {
             background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
@@ -137,7 +110,7 @@ const RenderMarkdownPreview = forwardRef(({ markdownContent, messageSource }, re
             padding: 15px 12px;
             text-align: left;
             font-weight: 600;
-            font-size: 11pt;
+            font-size: 26px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
@@ -145,7 +118,7 @@ const RenderMarkdownPreview = forwardRef(({ markdownContent, messageSource }, re
             padding: 12px;
             border-bottom: 1px solid #e5e7eb;
             vertical-align: top;
-            font-size: 10pt;
+            font-size: 24px;
           }
           .markdown-table tbody tr:nth-child(even) {
             background-color: #f8fafc;
@@ -212,20 +185,6 @@ const RenderMarkdownPreview = forwardRef(({ markdownContent, messageSource }, re
             margin: 15px 0;
           }
         `}</style>
-
-        <div className="markdown-content markdown-table">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              table: ({ children }) => <table>{children}</table>,
-              thead: ({ children }) => <thead>{children}</thead>,
-              th: ({ children }) => <th>{children}</th>,
-              td: ({ children }) => <td>{children}</td>,
-            }}
-          >
-            {markdownContent.replace(/\{[\s\S]*\}/, "").trim()}
-          </ReactMarkdown>
-        </div>
       </div>
 
       {/* Footer */}

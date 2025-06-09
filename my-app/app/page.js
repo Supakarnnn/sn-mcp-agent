@@ -23,6 +23,7 @@ import RenderMarkdownPreview from "./component/rendermarkdown.js";
 import { useMarkdownToPDF } from "./component/markdownpdf.js";
 import { handleChartToPDF } from "./component/charttopdf.js";
 import { useHandleExportAll } from "./component/exportall.js";
+import { useExcelExport } from './component/excelexport.js';
 
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -65,10 +66,13 @@ export default function Home() {
   const [apiMode, setApiMode] = useState("chat");
   const [selectedMessageIndex, setSelectedMessageIndex] = useState(null);
   const [showQuestionOptions, setShowQuestionOptions] = useState(false);
+  const [datasetVisibility, setDatasetVisibility] = useState({});
 
   const messagesEndRef = useRef(null);
   const markdownRef = useRef(null);
   const messagesContainerRef = useRef(null);
+
+  const { exportToExcel } = useExcelExport();
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -87,10 +91,10 @@ export default function Home() {
 
     const apiURL =
       apiMode === "report"
-        ? "http://192.168.40.26:8001/create-check-in-report"
+        ? "http://192.168.40.67:8001/create-check-in-report"
         : apiMode === "sickReport"
-          ? "http://192.168.40.26:8001/create-take-leave-report"
-          : "http://192.168.40.26:8001/chat";
+          ? "http://192.168.40.67:8001/create-take-leave-report"
+          : "http://192.168.40.67:8001/chat";
 
     try {
       const response = await fetch(apiURL, {
@@ -158,15 +162,26 @@ export default function Home() {
   getSelectedMessageSource,
 });
 
+  const handleDatasetVisibilityChange = (chartKey, datasetIndex, isVisible) => {
+    setDatasetVisibility(prev => ({
+      ...prev,
+      [chartKey]: {
+        ...(prev[chartKey] || {}),
+        [datasetIndex]: isVisible
+      }
+    }));
+  };
+
   const exportSpecificMessageToPDF = async (messageIndex) => {
-    await handleChartToPDF(messageIndex, messages, setLoading);
+    await handleChartToPDF(messageIndex, messages, setLoading, datasetVisibility);
   };
 
 const handleExportAll = useHandleExportAll({
   messages,
   markdownRef,
   getSelectedMarkdownContent,
-  setLoading
+  setLoading,
+  datasetVisibility
 });
   return (
     <div>
@@ -228,19 +243,34 @@ const handleExportAll = useHandleExportAll({
                         <Bar
                           data={{
                             ...chart,
-                            datasets: chart.datasets.map((dataset) => {
+                            datasets: chart.datasets.map((dataset, index) => {
                               const colors = getColorByDatasetLabel(dataset.label);
+                              const isVisible = datasetVisibility[key]?.[index] !== false;
                               return {
                                 ...dataset,
                                 backgroundColor: dataset.backgroundColor || colors.bg,
                                 borderColor: dataset.borderColor || colors.border,
                                 borderWidth: 2,
                                 borderRadius: 4,
-                                borderSkipped: false
+                                borderSkipped: false,
+                                hidden: !isVisible
                               };
                             })
                           }}
-                          options={getChartOptions(key, false, chart)}
+                          options={{
+                            ...getChartOptions(key, false, chart),
+                            plugins: {
+                              ...getChartOptions(key, false, chart).plugins,
+                              legend: {
+                                ...getChartOptions(key, false, chart).plugins.legend,
+                                onClick: (e, legendItem, legend) => {
+                                  const index = legendItem.datasetIndex;
+                                  const currentVisibility = datasetVisibility[key]?.[index] !== false;
+                                  handleDatasetVisibilityChange(key, index, !currentVisibility);
+                                }
+                              }
+                            }
+                          }}
                         />
                       </div>
                     ))}
@@ -254,6 +284,7 @@ const handleExportAll = useHandleExportAll({
                           className={`${styles.exportBtn} ${styles.exportBtnAll}`}
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedMessageIndex(aiIndex);
                             handleExportAll(aiIndex);
                           }}
                           title="ส่งออกทั้งกราฟและรายงานเป็น PDF"
@@ -265,18 +296,35 @@ const handleExportAll = useHandleExportAll({
 
                       {/* ปุ่มสำหรับ Export เฉพาะ Report - จะแสดงเมื่อมี content แต่ไม่มีกราฟ หรือมีทั้งคู่ */}
                       {msg.content && msg.content.trim().length > 0 && (
-                        <button
-                          className={`${styles.exportBtn} ${styles.exportBtnReport}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedMessageIndex(aiIndex);
-                            handleMarkdownToPDF();
-                          }}
-                          title="ส่งออกเฉพาะรายงานเป็น PDF"
-                          disabled={loading}
-                        >
-                          📄 {loading ? 'กำลังสร้าง...' : 'ส่งออกรายงาน'}
-                        </button>
+                        <>
+                          <button
+                            className={`${styles.exportBtn} ${styles.exportBtnReport}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedMessageIndex(aiIndex);
+                              handleMarkdownToPDF();
+                            }}
+                            title="ส่งออกเฉพาะรายงานเป็น PDF"
+                            disabled={loading}
+                          >
+                            📄 {loading ? 'กำลังสร้าง...' : 'ส่งออกรายงาน'}
+                          </button>
+                          <button
+                            className={`${styles.exportBtn} ${styles.exportBtnReport}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              try {
+                                exportToExcel(msg.content, 'report.xlsx');
+                              } catch (error) {
+                                console.error('Failed to export Excel:', error);
+                              }
+                            }}
+                            title="ส่งออกรายงานเป็น Excel"
+                            disabled={loading}
+                          >
+                            📊 {loading ? 'กำลังสร้าง...' : 'ส่งออก Excel'}
+                          </button>
+                        </>
                       )}
 
                       {/* ปุ่มสำหรับ Export เฉพาะกราฟ - จะแสดงเมื่อมีกราฟ */}

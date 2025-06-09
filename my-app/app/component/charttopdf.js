@@ -41,7 +41,7 @@ const getColorByDatasetLabel = (label) => {
   };
 };
 
-export const handleChartToPDF = async (messageIndex = null, messages = [], setLoading) => {
+export const handleChartToPDF = async (messageIndex = null, messages = [], setLoading, datasetVisibility = {}) => {
   const aiMessages = messages.filter(msg => msg.role === "ai");
   if (aiMessages.length === 0) {
     alert("ไม่พบข้อมูลกราฟสำหรับส่งออก");
@@ -57,7 +57,7 @@ export const handleChartToPDF = async (messageIndex = null, messages = [], setLo
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       if (parsed.labels && parsed.datasets) {
-        chartObjects.push({ key: "รายงานข้อมูล", chart: parsed });
+        chartObjects.push({ key: "Chart", chart: parsed });
       } else {
         for (const [key, chart] of Object.entries(parsed)) {
           if (chart.labels && chart.datasets) {
@@ -85,19 +85,25 @@ export const handleChartToPDF = async (messageIndex = null, messages = [], setLo
     const pageHeight = doc.internal.pageSize.getHeight();
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.setTextColor(44, 62, 80);
-    doc.text("On report", pageWidth / 2, 30, { align: 'center' });
+    doc.setFontSize(18);
+    doc.setTextColor(34, 139, 34);
+    doc.text("On Report", pageWidth / 2, 30, { align: 'center' });
+
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
+    doc.setFontSize(15);
     doc.setTextColor(100, 100, 100);
 
     const currentDate = new Date().toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
     doc.text(`Generated: ${currentDate}`, pageWidth / 2, 40, { align: 'center' });
-    doc.setDrawColor(44, 62, 80);
-    doc.setLineWidth(0.5);
+
+    doc.setDrawColor(34, 139, 34);
+    doc.setLineWidth(1);
     doc.line(20, 45, pageWidth - 20, 45);
 
     let yPosition = 60;
@@ -115,13 +121,17 @@ export const handleChartToPDF = async (messageIndex = null, messages = [], setLo
       canvas.height = 400;
       const ctx = canvas.getContext('2d');
 
+      // Filter out hidden datasets based on visibility state
+      const visibleDatasets = chart.datasets.filter((dataset, index) => {
+        return datasetVisibility[key]?.[index] !== false;
+      });
+
       const cleanedChart = {
         labels: chart.labels,
-        datasets: chart.datasets.map((dataset) => {
+        datasets: visibleDatasets.map((dataset) => {
           const colors = getColorByDatasetLabel(dataset.label);
           return {
             ...dataset,
-            label: dataset.label,
             backgroundColor: dataset.backgroundColor || colors.bg,
             borderColor: dataset.borderColor || colors.border,
             borderWidth: 1
