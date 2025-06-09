@@ -91,10 +91,10 @@ export default function Home() {
 
     const apiURL =
       apiMode === "report"
-        ? "http://192.168.40.67:8001/create-check-in-report"
+        ? "http://localhost:8001/create-check-in-report"
         : apiMode === "sickReport"
-          ? "http://192.168.40.67:8001/create-take-leave-report"
-          : "http://192.168.40.67:8001/chat";
+          ? "http://localhost:8001/create-take-leave-report"
+          : "http://localhost:8001/chat";
 
     try {
       const response = await fetch(apiURL, {
