@@ -235,7 +235,9 @@
 }
 
 .pillButton {
-  composes: button-base;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid var(--border-color);
   background: linear-gradient(180deg, var(--card-background) 0%, #1a1a1a 100%);
   color: var(--secondary-text);
@@ -244,6 +246,24 @@
   border-radius: 9999px;
   cursor: pointer;
   transform: translateY(0);
+}
+
+.pillButton::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.pillButton:hover::after {
+  width: 300%;
+  height: 300%;
 }
 
 .pillButton:hover {
@@ -359,7 +379,9 @@
 
 /* Keep existing button styles but update some properties */
 .sendButton {
-  composes: button-base;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: linear-gradient(180deg, var(--primary-color) 0%, #8a7468 100%);
   color: var(--text-color);
   border: none;
@@ -373,6 +395,24 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(154, 132, 120, 0.2);
+}
+
+.sendButton::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.sendButton:hover::after {
+  width: 300%;
+  height: 300%;
 }
 
 .sendButton:hover {
@@ -389,7 +429,9 @@
 }
 
 .resetButton {
-  composes: button-base;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-left: auto;
   padding: 0.5rem 1.25rem;
   font-size: 0.9rem;
@@ -398,6 +440,24 @@
   background: transparent;
   color: var(--error-color);
   cursor: pointer;
+}
+
+.resetButton::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.resetButton:hover::after {
+  width: 300%;
+  height: 300%;
 }
 
 .resetButton:hover {
@@ -470,7 +530,9 @@
 }
 
 .checkboxLabel {
-  composes: button-base;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -482,6 +544,24 @@
   user-select: none;
   color: var(--secondary-text);
   background: linear-gradient(180deg, var(--card-background) 0%, #1a1a1a 100%);
+}
+
+.checkboxLabel::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.checkboxLabel:hover::after {
+  width: 300%;
+  height: 300%;
 }
 
 .checkboxLabel:hover {
@@ -637,83 +717,64 @@
   gap: 10px;
   margin-top: 12px;
   flex-wrap: wrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.message:hover .exportActions {
+  opacity: 1;
 }
 
 .exportBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.exportBtnAll {
-  background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
-  color: white;
-  font-weight: 600;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  position: relative;
-}
-
-.exportBtnAll::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 8px;
-  padding: 2px;
-  background: linear-gradient(135deg, #8b5cf6, #3b82f6);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  z-index: -1;
-}
-
-.exportBtnAll:hover:not(:disabled) {
-  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-}
-
-.exportBtnChart {
-  background: #3b82f6;
-  color: white;
-}
-
-.exportBtnChart:hover:not(:disabled) {
-  background: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
-}
-
-.exportBtnReport {
-  background: #10b981;
-  color: white;
-}
-
-.exportBtnReport:hover:not(:disabled) {
-  background: #059669;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+.exportBtn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .exportBtn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
-.exportBtn:active:not(:disabled) {
-  transform: scale(0.98);
+.exportBtnAll {
+  background-color: rgba(52, 152, 219, 0.2);
+  border-color: rgba(52, 152, 219, 0.3);
+}
+
+.exportBtnAll:hover {
+  background-color: rgba(52, 152, 219, 0.3);
+  border-color: rgba(52, 152, 219, 0.4);
+}
+
+.exportBtnReport {
+  background-color: rgba(46, 204, 113, 0.2);
+  border-color: rgba(46, 204, 113, 0.3);
+}
+
+.exportBtnReport:hover {
+  background-color: rgba(46, 204, 113, 0.3);
+  border-color: rgba(46, 204, 113, 0.4);
+}
+
+.exportBtnChart {
+  background-color: rgba(155, 89, 182, 0.2);
+  border-color: rgba(155, 89, 182, 0.3);
+}
+
+.exportBtnChart:hover {
+  background-color: rgba(155, 89, 182, 0.3);
+  border-color: rgba(155, 89, 182, 0.4);
 }

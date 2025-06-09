@@ -8,6 +8,7 @@ from decimal import Decimal
 from langchain_openai import ChatOpenAI
 from prompt.p import VIS_REPORT
 from datetime import datetime
+from typing import List
 
 load_dotenv()
 
@@ -61,6 +62,21 @@ async def today_date():
         "time": now.strftime("%H:%M:%S"),
         "datetime": now.isoformat()
     }
+
+@mcp.tool("add_number")
+async def add_number(number: List[float])-> dict:
+    """
+    เครื่องมือสำหรับการบวกเลข
+
+    Args:
+        numbers (List[float]): รายการของตัวเลข
+
+    Returns:
+        dict: ผลรวมของเลขทั้งหมด
+    """
+    logger.info(f"LLM is trying to use add_number: {number}")
+    result = sum(number)
+    return {"result": result}
 
 @mcp.tool("execute_select_or_show")
 async def execute_select_or_show(query: str):
