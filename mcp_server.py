@@ -619,6 +619,6 @@ async def get_overtime(name: str, year: str,start_date: str,end_date: str):
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="streamable-http")
 
     #fastmcp run mcp_server.py:mcp --transport streamable-http --port 8080 --host 0.0.0.0
