@@ -1,16 +1,14 @@
 import os
-from fastmcp import FastMCP
 from dotenv import load_dotenv
+load_dotenv()
+from fastmcp import FastMCP
 import logging
 import json
 from mysql.connector import connect, Error
 from decimal import Decimal
 from langchain_openai import ChatOpenAI
-from prompt.p import VIS_REPORT
 from datetime import datetime
 from typing import List
-
-load_dotenv()
 
 mcp = FastMCP(name="MCP Server")
 
@@ -27,13 +25,13 @@ class DecimalEncoder(json.JSONEncoder):
             return float(obj)
         return super().default(obj)
     
-llm = ChatOpenAI(
-    base_url=os.environ.get("BASE_URL"),
-    model='gpt-4o-mini',
-    api_key=os.environ["OPENAI_API_KEY"],
-    temperature=0,
-    top_p=0
-)
+# llm = ChatOpenAI(
+#     base_url=os.environ.get("BASE_URL"),
+#     model='gpt-4o-mini',
+#     api_key=os.environ["OPENAI_API_KEY"],
+#     temperature=0,
+#     top_p=0
+# )
 
 DB_CONFIG = {
     "host": os.environ.get("MYSQL_HOST_NW"),
@@ -109,20 +107,62 @@ async def execute_select_or_show(query: str):
         logger.error(f"Error executing query: {e}")
         return {"result": json.dumps({"error": str(e)}), "status": "error"}
 
-@mcp.tool("get_visualization_object")
-async def get_visualization_object(m: str):
-    """
-    เครื่องมือช่วยทำ Graph, Chart จาก markdown เป็น object
-    """
-    logger.info(f"LLM is trying to use get_visualization_object by this message: {m}")
-    messages = [
-        ("system", VIS_REPORT),
-        ("human", m),
-    ]
+# VIS_REPORT = """You are an expert data analyst. Your task is to convert table data into Chart.js object format with proper labels and datasets.
 
-    res = await llm.ainvoke(messages)
-    results = res.content
-    return json.dumps(results,ensure_ascii=False, cls=DecimalEncoder)
+# **Example JSON Format for Multiple Datasets:**
+# {
+#   "labels": ["Employee 1", "Employee 2", "Employee 3"],
+#   "datasets": [
+#     {
+#       "label": " xxx ",
+#       "data": [75.03, 44.0, 43.0],
+#       "backgroundColor": "rgba(46, 204, 113, 0.8)",
+#       "borderColor": "rgba(46, 204, 113, 1)",
+#       "borderWidth": 2
+#     },
+#     {
+#       "label": " xxx ",
+#       "data": [5, 3, 2],
+#       "backgroundColor": "rgba(241, 196, 15, 0.8)",
+#       "borderColor": "rgba(241, 196, 15, 1)",
+#       "borderWidth": 2
+#     },
+#     {
+#       "label": " xxx ",
+#       "data": [10, 8, 6],
+#       "backgroundColor": "rgba(52, 152, 219, 0.8)",
+#       "borderColor": "rgba(52, 152, 219, 1)",
+#       "borderWidth": 2
+#     },
+#     {
+#       "label": " xxx ",
+#       "data": [2, 1, 3],
+#       "backgroundColor": "rgba(231, 76, 60, 0.8)",
+#       "borderColor": "rgba(231, 76, 60, 1)",
+#       "borderWidth": 2
+#     }
+#   ]
+# }
+
+# return no description or const.
+# **Examples:**
+# - "กราฟ Service ในปี 2023" → Show ALL metrics
+# """
+
+# @mcp.tool("get_visualization_object")
+# async def get_visualization_object(m: str):
+#     """
+#     เครื่องมือช่วยทำ Graph, Chart จาก markdown เป็น object
+#     """
+#     logger.info(f"LLM is trying to use get_visualization_object by this message: {m}")
+#     messages = [
+#         ("system", VIS_REPORT),
+#         ("human", m),
+#     ]
+
+#     res = await llm.ainvoke(messages)
+#     results = res.content
+#     return json.dumps(results,ensure_ascii=False, cls=DecimalEncoder)
     
 #YEAR
 ####################################################################################################################################

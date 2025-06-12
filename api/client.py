@@ -3,9 +3,8 @@ import io
 import json
 import pandas as pd
 from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-from typing import AsyncGenerator
 from fastapi import UploadFile, File
 from mysql.connector import connect, Error
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,9 +16,6 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools
 from agent.graph import react_agent,react_sick_agent
 from agent.react import p_react_agent
-
-# Load environment variables
-load_dotenv()
 
 app = FastAPI(title="AI Assistant")
 
@@ -45,16 +41,15 @@ def get_db_connection():
     except Error as e:
         raise Exception(f"{str(e)}")
 
+
 llm = ChatOpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
     base_url=os.environ.get("BASE_URL"),
     model='gpt-4.1-mini',
-    api_key=os.environ["OPENAI_API_KEY"],
     streaming=True,
     temperature=0,
     top_p=0
 )
-
-df_global = None
 
 @app.post("/preview-csv")
 async def preview_csv(file: UploadFile = File(...)):
@@ -233,7 +228,7 @@ async def chat(chatmessage: RequestMessage):
     client = MultiServerMCPClient(
         {
             "db": {
-                "url": "http://localhost:8080/mcp",
+                "url": "http://mcp:8080/mcp",
                 "transport": "streamable_http",
             }
         }
@@ -264,7 +259,7 @@ async def create_report(request: RequestMessage):
     client = MultiServerMCPClient(
         {
             "db": {
-                "url": "http://localhost:8080/mcp",
+                "url": "http://mcp:8080/mcp",
                 "transport": "streamable_http",
             }
         }
@@ -302,7 +297,7 @@ async def create_sick_report(request: RequestMessage):
     client = MultiServerMCPClient(
         {
             "db": {
-                "url": "http://localhost:8080/mcp",
+                "url": "http://mcp:8080/mcp",
                 "transport": "streamable_http",
             }
         }
