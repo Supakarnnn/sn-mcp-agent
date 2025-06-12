@@ -28,3 +28,12 @@ services:
     - "8001:8001"
     env_file:
       - .env
+  web:
+      build:
+        context: ./my-app
+        dockerfile: Dockerfile
+      container_name: nextjs_web
+      ports:
+        - "3000:3000"
+      depends_on:
+        - api
