@@ -353,7 +353,7 @@ MYSQL_DATABASE_NW=<your_DATABASE_NAME>
 
 Run docker-compose
 ```bash
-docker-compose up --d
+docker-compose up -d
 ```
 
 Stop service
