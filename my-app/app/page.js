@@ -89,6 +89,13 @@ export default function Home() {
     setInput("");
     setLoading(true);
 
+    // const apiURL =
+    //   apiMode === "report"
+    //     ? "http://localhost:8001/create-check-in-report"
+    //     : apiMode === "sickReport"
+    //       ? "http://localhost:8001/create-take-leave-report"
+    //       : "http://localhost:8001/chat";
+
     const apiURL =
       apiMode === "report"
         ? "http://localhost/api/create-check-in-report"
@@ -154,13 +161,13 @@ export default function Home() {
 
   // ฟังก์ชันสำหรับแปลง Markdown เป็น PDF
   const handleMarkdownToPDF = useMarkdownToPDF({
-  markdownRef,
-  messagesContainerRef,
-  setLoading,
-  setSelectedMessageIndex,
-  getSelectedMarkdownContent,
-  getSelectedMessageSource,
-});
+    markdownRef,
+    messagesContainerRef,
+    setLoading,
+    setSelectedMessageIndex,
+    getSelectedMarkdownContent,
+    getSelectedMessageSource,
+  });
 
   const handleDatasetVisibilityChange = (chartKey, datasetIndex, isVisible) => {
     setDatasetVisibility(prev => ({
@@ -176,13 +183,13 @@ export default function Home() {
     await handleChartToPDF(messageIndex, messages, setLoading, datasetVisibility);
   };
 
-const handleExportAll = useHandleExportAll({
-  messages,
-  markdownRef,
-  getSelectedMarkdownContent,
-  setLoading,
-  datasetVisibility
-});
+  const handleExportAll = useHandleExportAll({
+    messages,
+    markdownRef,
+    getSelectedMarkdownContent,
+    setLoading,
+    datasetVisibility
+  });
   return (
     <div>
       <div className={styles.container}>
@@ -193,7 +200,6 @@ const handleExportAll = useHandleExportAll({
             messageSource={getSelectedMessageSource()}
             ref={markdownRef}
           />
-
           <div className={styles.messages} ref={messagesContainerRef}>
             {messages.map((msg, idx) => {
               let chartObjects = [];
@@ -228,7 +234,7 @@ const handleExportAll = useHandleExportAll({
                   <div>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{
                       msg.role === "ai"
-                        ? msg.content.replace(/\n*```json[\s\S]*```/g, "")
+                        ? msg.content.replace(/\{[\s\S]*\}$/, "").trim()
                         : msg.content
                     }</ReactMarkdown>
                     {chartObjects.map(({ key, chart }) => (

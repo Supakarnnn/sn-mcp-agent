@@ -138,7 +138,8 @@ def react_sick_agent(llm: ChatOpenAI,tools: List[StructuredTool],event: str):
         report_messages = [SystemMessage(content=REPORT_MAKER_REPORT)] + messages
         report_model = llm.invoke(report_messages)
 
-        graph_messages = [SystemMessage(content=VIS_REPORT)] + messages
+        r = report_model.content
+        graph_messages = [SystemMessage(content=VIS_REPORT)] + r
         graph_model = llm.invoke(graph_messages)
         print("finish")
         return{
