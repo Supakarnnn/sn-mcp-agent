@@ -1,5 +1,5 @@
 # On-report
-This project is part of intership with [softnix technology co. ltd](https://www.softnix.co.th/)
+This project is part of intership at [softnix technology co. ltd](https://www.softnix.co.th/)
 
 An AI-powered chatbot assistant for generating reports — in PDF, xlsx
 ## Knowledge
@@ -20,17 +20,29 @@ or
 Use your python package dependencies
 ```
 
-## Installation (UV):
+## Installation server side (local) (UV):
 
 step 1:
 ```bash
-uv add requirements.txt
+cd api
 ```
 step 2 (optional):
 ```bash
 uv add pip install requirements.txt
 ```
 step 3:
+```bash
+pip install -r requirements.txt
+```
+step 4:
+```bash
+cd mcp
+```
+step 5 (optional):
+```bash
+uv add pip install requirements.txt
+```
+step 6:
 ```bash
 pip install -r requirements.txt
 ```
@@ -50,15 +62,47 @@ MYSQL_DATABASE_NW=<your_DATABASE_NAME>
 
 ## Start Server
 
-FastAPI server
+**FastAPI server**
+```bash
+cd api
+```
 ```bash
 uv run client.py
 ```
+*Api will be running at http://localhost:8001 (or another port if specified)*
 
-MCP server
+**MCP server**
+```bash
+cd mcp
+```
 ```bash
 fastmcp run mcp_server.py:mcp --transport streamable-http --port 8080 --host 0.0.0.0
 ```
+
+*Mcp server will be running at http://localhost:8080 (or another port if specified)*
+
+
+## Start web client (local)
+
+Go to the project directory
+```bash
+cd my-app
+```
+
+Install dependencies
+```bash
+npm install
+```
+
+Start the development server
+```bash
+npm run dev
+```
+
+
+*The application will be running at http://localhost:3000/web (or another port if specified)*
+
+---
 
 ## Explain Tool in MCP server
 This simple tool is to let LLM execute SQL function in server (only select or show)
@@ -293,21 +337,32 @@ Ensure that the report is well-organized and uses the precise translations provi
 """
 ```
 
-## Start web client
+---
+## Run with Docker Compose
 
-Go to the project directory
+Create file name .env
 ```bash
-cd my-app
+OPENAI_API_KEY=<your_api_key>
+
+MYSQL_HOST_NW=<your_DATABASE_HOST>
+MYSQL_PORT_NW=<your_DATABASE_PORT>
+MYSQL_USER_NW=<your_DATABASE_USERNAME>
+MYSQL_PASSWORD_NW=<your_DATABASE_PASSWORD>
+MYSQL_DATABASE_NW=<your_DATABASE_NAME>
 ```
 
-Install dependencies
+Run docker-compose
 ```bash
-npm install
+docker-compose up --d
 ```
 
-Start the development server
+Stop service
 ```bash
-npm run dev
+docker-compose down
 ```
+## Notes
+Make sure ports in docker-compose.yml do not conflict.
 
-The application will be running at http://localhost:3000 (or another port if specified).
+You may use ngrok or similar tools to expose local development for testing.
+
+---
