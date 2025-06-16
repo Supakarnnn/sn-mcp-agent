@@ -102,6 +102,8 @@ npm run dev
 
 The application will be running at http://localhost:3000 (or another port if specified).
 
+---
+
 ## Explain Tool in MCP server
 This simple tool is to let LLM execute SQL function in server (only select or show)
 ```python
