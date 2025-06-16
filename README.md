@@ -100,7 +100,7 @@ npm run dev
 ```
 
 
-The application will be running at http://localhost:3000 (or another port if specified).
+*The application will be running at http://localhost:3000 (or another port if specified)*
 
 ---
 
