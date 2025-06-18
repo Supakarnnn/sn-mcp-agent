@@ -211,7 +211,7 @@ export const handleChartToPDF = async (messageIndex = null, messages = [], setLo
     }
 
     const messageNumber = targetIndex + 1;
-    const fileName = `On-report-Message-${messageNumber}-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const fileName = `Chart-Message-${messageNumber}-${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(fileName);
 
   } catch (err) {

@@ -95,13 +95,14 @@ export default function Home() {
     //     : apiMode === "sickReport"
     //       ? "http://localhost:8001/create-take-leave-report"
     //       : "http://localhost:8001/chat";
+    const baseURL = `http://${window.location.hostname}`;
 
     const apiURL =
       apiMode === "report"
-        ? "http://localhost/api/create-check-in-report"
+        ? `${baseURL}/api/create-check-in-report`
         : apiMode === "sickReport"
-          ? "http://localhost/api/create-take-leave-report"
-          : "http://localhost/api/chat";
+          ? `${baseURL}/api/create-take-leave-report`
+          : `${baseURL}/api/chat`;
 
     try {
       const response = await fetch(apiURL, {

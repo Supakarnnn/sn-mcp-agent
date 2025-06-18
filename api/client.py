@@ -228,7 +228,7 @@ async def chat(chatmessage: RequestMessage):
     client = MultiServerMCPClient(
         {
             "db": {
-                "url": "http://mcp:8080/mcp",
+                "url": os.environ.get("MCP_URL"),
                 "transport": "streamable_http",
             }
         }
@@ -259,7 +259,7 @@ async def create_report(request: RequestMessage):
     client = MultiServerMCPClient(
         {
             "db": {
-                "url": "http://mcp:8080/mcp",
+                "url":os.environ.get("MCP_URL"),
                 "transport": "streamable_http",
             }
         }
@@ -297,7 +297,7 @@ async def create_sick_report(request: RequestMessage):
     client = MultiServerMCPClient(
         {
             "db": {
-                "url": "http://mcp:8080/mcp",
+                "url":os.environ.get("MCP_URL"),
                 "transport": "streamable_http",
             }
         }
@@ -331,6 +331,6 @@ if __name__ == "__main__":
     uvicorn.run(app,host='0.0.0.0',port=8001)
 
     # http://localhost:8080/mcp
-    #http://mcp:8080/mcp
+    #http://192.168.40.26:8080/mcp
 
     

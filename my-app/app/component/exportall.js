@@ -69,13 +69,13 @@ export function useHandleExportAll({ messages, markdownRef, getSelectedMarkdownC
 
             // ========== PDF Header - เฉพาะ "On Report" และวันที่ ==========
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(20);
+            doc.setFontSize(22);
             doc.setTextColor(34, 139, 34);
             doc.text("On Report", pageWidth / 2, yPosition, { align: 'center' });
 
-            yPosition += 10;
+            yPosition += 12;
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(12);
+            doc.setFontSize(16);
             doc.setTextColor(100, 100, 100);
 
             const currentDate = new Date().toLocaleDateString('en-US', {
@@ -91,7 +91,7 @@ export function useHandleExportAll({ messages, markdownRef, getSelectedMarkdownC
             doc.setDrawColor(34, 139, 34);
             doc.setLineWidth(0.5);
             doc.line(20, yPosition, pageWidth - 20, yPosition);
-            yPosition += 15;
+            yPosition += 8;
 
             // ========== Report Content ==========
             let hasContentOnFirstPage = false; // ตัวแปรเช็คว่ามีเนื้อหาในหน้าแรกหรือไม่
@@ -118,17 +118,17 @@ export function useHandleExportAll({ messages, markdownRef, getSelectedMarkdownC
                         element.style.top = "-9999px";
                         element.style.left = "0";
                         element.style.zIndex = "1000";
-                        element.style.width = "1200px";
+                        element.style.width = "100%";
                         element.style.minWidth = "1200px";
-                        element.style.maxWidth = "none";
+                        element.style.maxWidth = "1500px";
                         element.style.height = "auto";
                         element.style.minHeight = "auto";
                         element.style.overflow = "visible";
                         element.style.backgroundColor = "#ffffff";
                         element.style.fontFamily = "Arial, sans-serif";
-                        element.style.fontSize = "24px";
+                        element.style.fontSize = "18px";
                         element.style.lineHeight = "1.5";
-                        element.style.padding = "40px";
+                        element.style.padding = "20px";
                         element.style.margin = "0";
                         element.style.color = "#333333";
                         element.style.boxSizing = "border-box";
@@ -206,39 +206,39 @@ export function useHandleExportAll({ messages, markdownRef, getSelectedMarkdownC
                         const tables = element.querySelectorAll('table');
                         tables.forEach(table => {
                             table.style.width = "100%";
-                            table.style.minWidth = "1300px";
-                            table.style.maxWidth = "none";
+                            table.style.minWidth = "100%";
+                            table.style.maxWidth = "100%";
                             table.style.tableLayout = "auto";
                             table.style.borderCollapse = "collapse";
-                            table.style.fontSize = "11px";
+                            table.style.fontSize = "16px";
                             table.style.margin = "5px 0 0 0";
                             table.style.padding = "0";
-                            table.style.overflow = "visible";
+                            table.style.overflow = "hidden";
                             table.style.marginTop = "5px";
 
                             // จัดการ cells
                             const cells = table.querySelectorAll('td, th');
                             cells.forEach(cell => {
-                                cell.style.padding = "6px 4px";
-                                cell.style.whiteSpace = "nowrap";
-                                cell.style.overflow = "visible";
-                                cell.style.textOverflow = "clip";
+                                cell.style.padding = "8px 6px";
+                                cell.style.whiteSpace = "normal";
+                                cell.style.overflow = "hidden";
+                                cell.style.textOverflow = "ellipsis";
                                 cell.style.border = "1px solid #ddd";
-                                cell.style.fontSize = "11px";
-                                cell.style.lineHeight = "1.2";
-                                cell.style.minWidth = "auto";
+                                cell.style.fontSize = "16px";
+                                cell.style.lineHeight = "1.4";
+                                cell.style.minWidth = "50px";
                                 cell.style.maxWidth = "none";
                             });
 
                             // จัดการ headers
                             const headers = table.querySelectorAll('th');
                             headers.forEach(header => {
-                                header.style.backgroundColor = "#4F90F7";
+                                header.style.backgroundColor = "#4A90E2";
                                 header.style.color = "white";
                                 header.style.fontWeight = "bold";
                                 header.style.textAlign = "center";
-                                header.style.fontSize = "11px";
-                                header.style.padding = "8px 4px";
+                                header.style.fontSize = "20px";
+                                header.style.padding = "12px 6px";
                             });
 
                             // จัดการ rows
@@ -260,9 +260,9 @@ export function useHandleExportAll({ messages, markdownRef, getSelectedMarkdownC
                             useCORS: true,
                             allowTaint: true,
                             backgroundColor: "#ffffff",
-                            width: 1400,
+                            width: element.scrollWidth,
                             height: element.scrollHeight,
-                            windowWidth: 1400,
+                            windowWidth: element.scrollWidth,
                             windowHeight: element.scrollHeight,
                             scrollX: 0,
                             scrollY: 0,
@@ -282,40 +282,8 @@ export function useHandleExportAll({ messages, markdownRef, getSelectedMarkdownC
                                 );
                             },
                             onclone: (clonedDoc) => {
-                                const clonedElement = clonedDoc.querySelector('[data-element-id]') ||
-                                    clonedDoc.body.firstChild;
-                                if (clonedElement) {
-                                    clonedElement.style.fontFamily = "Arial, sans-serif";
-                                    clonedElement.style.fontSize = "13px";
-                                    clonedElement.style.color = "#333333";
-                                    clonedElement.style.backgroundColor = "#ffffff";
-                                    clonedElement.style.width = "1400px";
-                                    clonedElement.style.overflow = "visible";
-
-                                    const clonedTables = clonedElement.querySelectorAll('table');
-                                    clonedTables.forEach(table => {
-                                        table.style.width = "100%";
-                                        table.style.minWidth = "1300px";
-                                        table.style.tableLayout = "auto";
-                                        table.style.fontSize = "11px";
-                                        table.style.borderCollapse = "collapse";
-
-                                        const clonedCells = table.querySelectorAll('td, th');
-                                        clonedCells.forEach(cell => {
-                                            cell.style.whiteSpace = "nowrap";
-                                            cell.style.fontSize = "11px";
-                                            cell.style.padding = "6px 4px";
-                                        });
-                                    });
-
-                                    const clonedUnwanted = clonedElement.querySelectorAll(
-                                        'button, [type="button"], .btn, [style*="border"], [style*="background-color: rgb(59, 130, 246)"], .report-header, .check-in-header, .header, .nav'
-                                    );
-                                    clonedUnwanted.forEach(el => {
-                                        el.style.display = 'none';
-                                        el.style.visibility = 'hidden';
-                                    });
-                                }
+                                // เราได้จัดการ style ทั้งหมดก่อนหน้านี้แล้ว ไม่จำเป็นต้องทำซ้ำในนี้
+                                // การทำซ้ำอาจทำให้ style ที่เราต้องการถูกเขียนทับ
                             }
                         });
 
@@ -529,7 +497,7 @@ export function useHandleExportAll({ messages, markdownRef, getSelectedMarkdownC
                                 },
                                 title: {
                                     display: true,
-                                    text: 'Employee Name',
+                                    text: 'ชื่อพนักงาน',
                                     color: "#333",
                                     font: {
                                         size: 12,
@@ -553,7 +521,7 @@ export function useHandleExportAll({ messages, markdownRef, getSelectedMarkdownC
                                 },
                                 title: {
                                     display: true,
-                                    text: 'Count (Times/Hours)',
+                                    text: 'จำนวน (ครั้ง/ชั่วโมง)',
                                     color: "#333",
                                     font: {
                                         size: 12,

@@ -1,4 +1,3 @@
-# Python-generated files
 .ruff_cache
 __pycache__/
 *.py[oc]
@@ -11,7 +10,8 @@ wheels/
 *.python-version
 csv_file/
 
-# Virtual environments
 *.venv
 *.env
 test.py
+# *.htpasswd
+# default.conf

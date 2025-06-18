@@ -360,6 +360,39 @@ Stop service
 ```bash
 docker-compose down
 ```
+
+## Create `.htpasswd`
+
+step 1:
+```bash
+create file name '.htpasswd' in root project
+```
+
+step 2:
+
+shell into nginx image and run this following command
+```bash
+apt update
+apt install apache2-utils
+htpasswd -c .htpasswd username
+```
+
+```bash
+cat .htpasswd
+```
+
+step 3:
+
+After run the command, you will get a .htpasswd file that supports this feature:
+
+```bash
+username:$apr1$OZ.3X...$.... (password)
+``` 
+
+COPY it and put it into `.htpasswd` in your root project
+
+
+
 ## Notes
 Make sure ports in docker-compose.yml do not conflict.
 

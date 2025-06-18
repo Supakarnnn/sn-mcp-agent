@@ -2,7 +2,7 @@ import { utils, write } from 'xlsx';
 import { saveAs } from 'file-saver';
 
 export const useExcelExport = () => {
-    const exportToExcel = (data, fileName = 'report.xlsx') => {
+    const exportToExcel = (data, fileName = 'report_excel.xlsx') => {
         if (!data) {
             console.error('No data provided for Excel export');
             return;
