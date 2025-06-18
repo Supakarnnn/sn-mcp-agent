@@ -13,5 +13,5 @@ csv_file/
 *.venv
 *.env
 test.py
-# *.htpasswd
-# default.conf
+*.htpasswd
+default.conf
